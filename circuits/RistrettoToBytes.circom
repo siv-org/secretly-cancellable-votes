@@ -214,22 +214,11 @@ template RistrettoToBytes() {
         s_bytes[i] <== sToBytes.out[i];
     }
 
-    // // Debug
-    // 3-limbed signals
-    signal z_plus_y_out[3];
-    signal z_minus_y_out[3];
-    signal u1_out[3];
-    for (var i = 0; i < 3; i++) {
-        z_plus_y_out[i] <== z_plus_y.out[i];
-        z_minus_y_out[i] <== z_minus_y.out[i];
-        u1_out[i] <== u1.out[i];
-    }
-
-    // 6-limbed signals
-    signal u1_premod_out[6];
-    for (var i = 0; i < 6; i++) {
-        u1_premod_out[i] <== u1_premod.out[i];
-    }
+    // Debug
+    signal z_plus_y_out[4] <== z_plus_y.out; // We can ignore the extra carry limb
+    signal z_minus_y_out[3] <== z_minus_y.out;
+    signal u1_out[3] <== u1.out;
+    signal u1_premod_out[6] <== u1_premod.out;
     // End debug
 }
 

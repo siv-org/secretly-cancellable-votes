@@ -57,9 +57,8 @@ template ChunkedSubModP(k, base) {
         mux.in[0][i] <== sub.out[i];       // no underflow, keep result
         mux.in[1][i] <== p_add.out[i];     // underflow, add p
     }
-    for (var i = 0; i < k; i++) {
-        out[i] <== mux.out[i];
-    }
+
+    out <== mux.out;
 }
 
 template ModSub(base) {

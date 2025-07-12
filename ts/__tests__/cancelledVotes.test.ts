@@ -488,7 +488,9 @@ describe('RistrettoToBytes().circom', () => {
     const circuit = await circomkit.WitnessTester('RistrettoToBytes', {
       file: './RistrettoToBytes',
       template: 'RistrettoToBytes',
-      recompile: shouldRecompile('RistrettoToBytes.circom'),
+      recompile:
+        shouldRecompile('RistrettoToBytes.circom') ||
+        shouldRecompile('ChunkedModP.circom'),
     })
 
     // const point = DebugRistrettoPoint.BASE
