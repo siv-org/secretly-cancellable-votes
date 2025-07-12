@@ -446,7 +446,8 @@ class RistrettoPoint {
     let { x, y, z, t } = this.ep
     const z_plus_y = mod(z + y)
     const z_minus_y = mod(z - y)
-    const u1 = mod(z_plus_y * z_minus_y) // 1
+    const u1_premod = z_plus_y * z_minus_y
+    const u1 = mod(u1_premod) // 1
     const u2 = mod(x * y) // 2
     // Square root always exists
     const u2sq = mod(u2 * u2)
@@ -474,6 +475,7 @@ class RistrettoPoint {
       debug: {
         z_plus_y,
         z_minus_y,
+        u1_premod,
         u1,
         u2,
         u2sq,

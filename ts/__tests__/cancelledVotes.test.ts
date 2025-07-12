@@ -13,7 +13,6 @@ import {
   getVectorSignal,
   poseidon,
   chunkBigInt,
-  dechunkArray,
 } from '../utils.ts'
 import { DebugRistrettoPoint } from '../ristretto/reference.ts'
 import { pointToString, stringToPoint } from '../curve.ts'
@@ -515,15 +514,29 @@ describe('RistrettoToBytes().circom', () => {
     // console.log('z-y length', String(expected.debug.z_minus_y).length)
 
     // Check circom intermediate results against JS
-    const vars_to_check = ['z_plus_y', 'z_minus_y', 'u1']
-    for (const signal of vars_to_check) {
-      const cc_signal = dechunkArray(
-        await getVectorSignal(circuit, witness, `${signal}_out`, 3)
-      )
-      expect(
-        cc_signal,
-        signal + ' mismatch: ' + String(cc_signal - expected.debug[signal])
-      ).toEqual(expected.debug[signal])
+    // key: num_limbs, value: signal_name[]
+    const vars_to_check = {
+      3: ['z_plus_y', 'z_minus_y'],
+      6: ['u1_premod'],
+    }
+    for (const [limbs, signals] of Object.entries(vars_to_check)) {
+      for (const signal of signals) {
+        const cc_signal = await getVectorSignal(
+          circuit,
+          witness,
+          `${signal}_out`,
+          +limbs
+        )
+        const cc_dechunked = cc_signal.reduce(
+          (acc, limb, index) => acc + (limb << (85n * BigInt(index))),
+          0n
+        )
+        expect(
+          cc_dechunked,
+          signal + ' mismatch: ' + String(cc_dechunked - expected.debug[signal])
+        ).toEqual(expected.debug[signal])
+        console.log(signal + ': ✓ match')
+      }
     }
 
     // const circuit_result = await getVectorSignal(
