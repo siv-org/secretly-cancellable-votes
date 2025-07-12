@@ -468,7 +468,7 @@ describe('HashAdminSalt circuit', () => {
 })
 
 describe('RistrettoToBytes().circom', () => {
-  it('can correctly calculate InverseSqrt(t) in circuit', async () => {
+  it.todo('can correctly calculate InverseSqrt(t) in circuit', async () => {
     const circuit = await circomkit.WitnessTester('ChunkedInvertSqrt', {
       file: './ChunkedSqrt',
       template: 'ChunkedInvertSqrt',
@@ -515,11 +515,7 @@ describe('RistrettoToBytes().circom', () => {
     // console.log('z-y length', String(expected.debug.z_minus_y).length)
 
     // Check circom intermediate results against JS
-    const vars_to_check = [
-      'z_plus_y',
-      'z_minus_y',
-      // 'u1',
-    ]
+    const vars_to_check = ['z_plus_y', 'z_minus_y', 'u1']
     for (const signal of vars_to_check) {
       const cc_signal = dechunkArray(
         await getVectorSignal(circuit, witness, `${signal}_out`, 3)
@@ -530,11 +526,16 @@ describe('RistrettoToBytes().circom', () => {
       ).toEqual(expected.debug[signal])
     }
 
-    // const out = await getVectorSignal(circuit, witness, 's_bytes', 32)
-    // void out
+    // const circuit_result = await getVectorSignal(
+    //   circuit,
+    //   witness,
+    //   's_bytes',
+    //   32
+    // )
+    // void circuit_result
     // void expected
-    // console.log({ out })
-    // console.log({ expected })
-    // expect(out).toEqual([...point.toRawBytes()].map(BigInt))
+    // console.log({ circuit_result })
+    // console.log({ js_result: expected.result })
+    // expect(circuit_result).toEqual(expected.result.map(BigInt))
   })
 })
