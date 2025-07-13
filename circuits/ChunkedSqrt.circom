@@ -25,15 +25,10 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
 
     // pow = (u * v7)^{(p-5)/8}
     signal uv7[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(u, v7));
-
+    // -- Confirmed above matches reference --
+    signal pow[chunks] <== ChunkedPow2_252_3(chunks, chunkBits, base)(uv7);
     log("circuit=");
-    for (var i = 0; i < chunks; i++) log(uv7[i]);
-    // Confirmed up to here matching reference
-
-    component pow = ChunkedPow2523(chunks, chunkBits, base);
-    for (var i = 0; i < chunks; i++) {
-        pow.in[i] <== uv7[i];
-    }
+    for (var i = 0; i < chunks; i++) log(pow[i]);
 
     // x = (u * v3) * pow
     component uv3 = ChunkedMul(chunks, chunkBits, base);
@@ -45,7 +40,7 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
     component x = ChunkedMul(chunks, chunkBits, base);
     for (var i = 0; i < chunks; i++) {
         x.in1[i] <== uv3.out[i];
-        x.in2[i] <== pow.out[i];
+        x.in2[i] <== pow[i];
     }
 
     // skip root checks (like vx² == u or -u) for now to keep ZK minimal
@@ -54,8 +49,8 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
     }
 }
 
-// Hard-coded exponentiation chain, which efficiently computes a^{(p-5)/8}.
-template ChunkedPow2523(chunks, chunkBits, base) {
+// Efficiently computes a^{(p-5)/8} aka x^(2^252-3).
+template ChunkedPow2_252_3(chunks, chunkBits, base) {
     signal input in[chunks];
     signal output out[chunks];
 

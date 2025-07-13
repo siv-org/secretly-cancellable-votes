@@ -928,8 +928,8 @@ function uvRatio(u: bigint, v: bigint): { isValid: boolean, value: bigint } {
   const v3 = mod(v * v * v);                  // v³
   const v7 = mod(v3 * v3 * v);                // v⁷
   const uv7 = u * v7
-  console.log(chunkBigInt(uv7))
   const pow = pow_2_252_3(uv7).pow_p_5_8;
+  console.log(chunkBigInt(pow))
   let x = mod(u * v3 * pow);                  // (uv³)(uv⁷)^(p-5)/8
   const vx2 = mod(v * x * x);                 // vx²
   const root1 = x;                            // First root candidate
