@@ -68,19 +68,4 @@ template ChunkedMul(m, n, base){
   }
 }
 
-/** Multiply a chunked number by itself */
-template ChunkedSquare(chunks, base) {
-    signal input a[chunks];
-    signal output out[chunks];
-
-    component sq = ChunkedMul(chunks, chunks, base);
-    for (var i = 0; i < chunks; i++) {
-        sq.in1[i] <== a[i];
-        sq.in2[i] <== a[i];
-    }
-
-    for (var i = 0; i < chunks; i++) {
-        out[i] <== sq.out[i];
-    }
-}
 

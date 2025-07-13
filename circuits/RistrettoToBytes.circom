@@ -40,15 +40,12 @@ template RistrettoToBytes() {
     signal u2[3] <== ChunkedModP()(ChunkedMul(3, 3, base)(x, y));
 
     // Step 3: invsqrt = invertSqrt(u1 * u2^2)
-    component sq_u2 = ChunkedSquare(3, base);
-    for (var i = 0; i < 3; i++) {
-        sq_u2.a[i] <== u2[i];
-    }
+    signal u2_sq[3] <== ChunkedModP()(ChunkedMul(3, 3, base)(u2, u2));
 
     component mul_sqrt = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
         mul_sqrt.in1[i] <== u1[i];
-        mul_sqrt.in2[i] <== sq_u2.out[i];
+        mul_sqrt.in2[i] <== u2_sq[i];
     }
 
     component invsqrt = ChunkedInvertSqrt(3, 3, base);
