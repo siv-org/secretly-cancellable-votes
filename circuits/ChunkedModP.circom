@@ -45,12 +45,12 @@ template ScalarChunkMul(scalar) {
 }
 
 
-template ChunkedAddSingle(chunkBits) {
+template ChunkedAddSingle(base) {
     signal input in1;
     signal input in2;
     signal output out;
 
-    var power = 2 ** chunkBits;
+    var power = 2 ** base;
     signal output carry;
 
     carry <-- (in1 + in2) \ power;
@@ -60,7 +60,7 @@ template ChunkedAddSingle(chunkBits) {
     in1 + in2 === out + carry * power;
 
     // Constrain range of out
-    component lt = LessThanPower(chunkBits);
+    component lt = LessThanPower(base);
     lt.in <== out;
     out * lt.out === out;
 }

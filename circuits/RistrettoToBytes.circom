@@ -205,32 +205,32 @@ template Multiplexor2(chunks) {
     }
 }
 
-template ChunkedNeg(chunks, chunkbits) {
+template ChunkedNeg(chunks, base) {
     signal input in[chunks];
     signal output out[chunks];
 
-    var max_val = (1 << chunkbits) - 1;
+    var max_val = (1 << base) - 1;
     for (var i = 0; i < chunks; i++) {
         out[i] <== max_val - in[i];
     }
 }
 
-template IsNegativeChunked(chunks, chunkbits) {
+template IsNegativeChunked(chunks, base) {
     signal input in[chunks];
     signal output out;
 
     // Check if the least significant bit of the first chunk is 1
     // This indicates negativity in little-endian representation
-    component bits = Num2Bits(chunkbits);
+    component bits = Num2Bits(base);
     bits.in <== in[0];
     out <== bits.out[0];
 }
 
-template ChunkedToBytes(chunks, chunkbits) {
+template ChunkedToBytes(chunks, base) {
     signal input in[chunks];
     signal output out[32];
 
-    var totalbits = chunks * chunkbits; // should be 255
+    var totalbits = chunks * base; // should be 255
 
     assert(totalbits == 255); // sanity check
 
@@ -240,7 +240,7 @@ template ChunkedToBytes(chunks, chunkbits) {
     signal acc[chunks + 1];
     acc[0] <== 0;
     for (var i = 0; i < chunks; i++) {
-        acc[i+1] <== acc[i] + in[i] * (1 << (i * chunkbits));
+        acc[i+1] <== acc[i] + in[i] * (1 << (i * base));
     }
     bits.in <== acc[chunks];
 
