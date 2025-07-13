@@ -493,6 +493,7 @@ describe('RistrettoToBytes().circom', () => {
         shouldRecompile('ChunkedModP.circom'),
     })
 
+    // for (let i = 0; i < 100; i++) {
     // const point = DebugRistrettoPoint.BASE
     const nonDebugPoint = stringToPoint('foobar random point')
 
@@ -536,6 +537,8 @@ describe('RistrettoToBytes().circom', () => {
           (acc, limb, index) => acc + (limb << (85n * BigInt(index))),
           0n
         )
+
+        // if (signal === 'u1') console.log(cc_dechunked - expected.debug[signal])
         expect(
           cc_dechunked,
           signal + ' mismatch: ' + String(cc_dechunked - expected.debug[signal])
@@ -555,5 +558,6 @@ describe('RistrettoToBytes().circom', () => {
     // console.log({ circuit_result })
     // console.log({ js_result: expected.result })
     // expect(circuit_result).toEqual(expected.result.map(BigInt))
+    // }
   })
 })

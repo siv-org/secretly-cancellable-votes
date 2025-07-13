@@ -1,52 +1,37 @@
 pragma circom 2.2.2;
 
 include "./ed25519/chunkedmul.circom";
+include "./ed25519/chunkedsub.circom";
 
+/** This takes a 6-chunk input and outputs a 3-chunk result, mod P (2^255 - 19) */
 template ChunkedModP() {
     signal input in[6];
-    signal output out[3];
 
-    var i;
+    // Step 1: Fold high limbs by multiplying by 19 and adding to low limbs
+    signal fold3 <== ScalarChunkMul(19)(in[3]);
+    signal fold4 <== ScalarChunkMul(19)(in[4]);
+    signal fold5 <== ScalarChunkMul(19)(in[5]);
 
-    // prepare folds
-    component fold3 = ScalarChunkMul(19);
-    fold3.in <== in[3];
+    // Add folded values to low limbs with proper carry handling
+    signal add0, carry0;
+    (add0, carry0) <== ChunkedAddSingle(85)(in[0], fold3);
 
-    component fold4 = ScalarChunkMul(19);
-    fold4.in <== in[4];
+    signal add1, carry1;
+    (add1, carry1) <== ChunkedAddSingle(85)(in[1], fold4 + carry0);
 
-    component fold5 = ScalarChunkMul(19);
-    fold5.in <== in[5];
+    signal add2, carry2;
+    (add2, carry2) <== ChunkedAddSingle(85)(in[2], fold5 + carry1);
 
-    // sum low chunks
-    component add0 = ChunkedAddSingle(85);
-    add0.in1 <== in[0];
-    add0.in2 <== fold3.out;
+    // Create intermediate signals for the folded result
+    signal folded[3] <== [add0, add1, add2];
 
-    component add1 = ChunkedAddSingle(85);
-    add1.in1 <== in[1];
-    add1.in2 <== fold4.out + add0.carry;
+    // Step 2: Handle potential overflow in the last limb
+    // If carry2 > 0, we need to subtract p (2^255 - 19)
+    signal diff[3];
+    (diff, _) <== ChunkedSub(3, 85)(folded, [(2 ** 85 - 19), (2 ** 85 - 1), (2 ** 85 - 1)]);
 
-    component add2 = ChunkedAddSingle(85);
-    add2.in1 <== in[2];
-    add2.in2 <== fold5.out + add1.carry;
-
-    signal folded[3];
-
-    // sum low chunks
-    folded[0] <== add0.out;
-    folded[1] <== add1.out;
-    folded[2] <== add2.out;
-
-    // finally reduce if folded >= p
-    component finalReduce = ChunkedSubModP(3, 85);
-    for (i = 0; i < 3; i++) {
-        finalReduce.a[i] <== folded[i];
-        finalReduce.b[i] <== 0;  // compare against p inside ChunkedSubModP
-    }
-    for (i = 0; i < 3; i++) {
-        out[i] <== finalReduce.out[i];
-    }
+    signal needs_reduction <== carry2;
+    signal output out[3] <== Multiplexor2(3)(needs_reduction, [folded, diff]);
 }
 
 /** Because the chunks are ≤ 2^85, multiplying by 19 means:
@@ -56,7 +41,6 @@ For now, since we’re only folding these back into an addition, we can just mul
 template ScalarChunkMul(scalar) {
     signal input in;
     signal output out;
-
     out <== in * scalar;
 }
 

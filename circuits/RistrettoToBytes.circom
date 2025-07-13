@@ -282,9 +282,9 @@ template ChunkedToBytes(chunks, chunkbits) {
 
 // npx snarkjs r1cs info build/RistrettoToBytes.r1cs
 // [INFO]  snarkJS: Curve: bn-128
-// [INFO]  snarkJS: # of Wires: 9441
-// [INFO]  snarkJS: # of Constraints: 9435
+// [INFO]  snarkJS: # of Wires: 9432
+// [INFO]  snarkJS: # of Constraints: 9425
 // [INFO]  snarkJS: # of Private Inputs: 12
 // [INFO]  snarkJS: # of Public Inputs: 0
-// [INFO]  snarkJS: # of Labels: 19880
+// [INFO]  snarkJS: # of Labels: 19875
 // [INFO]  snarkJS: # of Outputs: 32
