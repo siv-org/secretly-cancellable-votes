@@ -68,4 +68,8 @@ template ChunkedMul(m, n, base){
   }
 }
 
-
+template ChunkedMulModP(m, n, base) {
+  signal input in1[m];
+  signal input in2[n];
+  signal output out[m] <== ChunkedModP()(ChunkedMul(m, n, base)(in1, in2));
+}

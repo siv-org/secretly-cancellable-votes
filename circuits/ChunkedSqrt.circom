@@ -54,8 +54,8 @@ template ChunkedPow2_252_3(chunks, chunkBits, base) {
     signal input x[chunks];
     signal output out[chunks];
 
-    signal x2[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(x, x));
-    signal b2[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(x2, x));
+    signal x2[chunks] <== ChunkedMulModP(chunks, chunkBits, base)(x, x);
+    signal b2[chunks] <== ChunkedMulModP(chunks, chunkBits, base)(x2, x);
     // -- Confirmed above matches reference --
 
     log("circuit:");
