@@ -25,11 +25,11 @@ template ChunkedModP() {
 
     component add1 = ChunkedAddSingle(85);
     add1.in1 <== in[1];
-    add1.in2 <== fold4.out;
+    add1.in2 <== fold4.out + add0.carry;
 
     component add2 = ChunkedAddSingle(85);
     add2.in1 <== in[2];
-    add2.in2 <== fold5.out;
+    add2.in2 <== fold5.out + add1.carry;
 
     signal folded[3];
 
@@ -67,14 +67,12 @@ template ChunkedAddSingle(chunkBits) {
     signal output out;
 
     var power = 2 ** chunkBits;
-    signal carry;
+    signal output carry;
 
-    carry <-- (in1 + in2) / power;
+    carry <-- (in1 + in2) \ power;
     out   <-- (in1 + in2) % power;
 
     // Enforce modular relationship
-    // log(in1 + in2);
-    // log(out + carry * power);
     in1 + in2 === out + carry * power;
 
     // Constrain range of out
