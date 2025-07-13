@@ -34,14 +34,14 @@ template RistrettoToBytes() {
     // Step 1: u1 = mod((z + y) * (z - y))
     signal z_plus_y[3] <== ChunkedAddAndTruncate(3, base)(z, y);
     signal z_minus_y[3] <== ChunkedSubModP(3, base)(z, y);
-    signal u1[3] <== ChunkedModP()(ChunkedMul(3, 3, base)(z_plus_y, z_minus_y));
+    signal u1[3] <== ChunkedMulModP()(z_plus_y, z_minus_y);
 
     // Step 2: u2 = mod(x * y)
-    signal u2[3] <== ChunkedModP()(ChunkedMul(3, 3, base)(x, y));
+    signal u2[3] <== ChunkedMulModP()(x, y);
 
     // Step 3: invsqrt = invertSqrt(u1 * u2^2)
-    signal u2_sq[3] <== ChunkedModP()(ChunkedMul(3, 3, base)(u2, u2));
-    signal u1_times_u2_sq[3] <== ChunkedModP()(ChunkedMul(3, 3, base)(u1, u2_sq));
+    signal u2_sq[3] <== ChunkedMulModP()(u2, u2);
+    signal u1_times_u2_sq[3] <== ChunkedMulModP()(u1, u2_sq);
     signal invsqrt[3] <== ChunkedInvertSqrt(3, base)(u1_times_u2_sq);
 
     // Step 4: D1 = invsqrt * u1
