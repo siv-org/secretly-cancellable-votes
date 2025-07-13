@@ -34,21 +34,15 @@ template RistrettoToBytes() {
     // Step 1: u1 = mod((z + y) * (z - y))
     signal z_plus_y[3] <== ChunkedAddAndTruncate(3, base)(z, y);
     signal z_minus_y[3] <== ChunkedSubModP(3, base)(z, y);
-    signal u1_premod[6] <== ChunkedMul(3, 3, base)(z_plus_y, z_minus_y);
+    signal u1[3] <== ChunkedModP()(ChunkedMul(3, 3, base)(z_plus_y, z_minus_y));
 
-    signal u1[3] <== ChunkedModP()(u1_premod);
-
-    // Step 2: u2 = x * y
-    component mul_u2 = ChunkedMul(3, 3, base);
-    for (var i = 0; i < 3; i++) {
-        mul_u2.in1[i] <== x[i];
-        mul_u2.in2[i] <== y[i];
-    }
+    // Step 2: u2 = mod(x * y)
+    signal u2[3] <== ChunkedModP()(ChunkedMul(3, 3, base)(x, y));
 
     // Step 3: invsqrt = invertSqrt(u1 * u2^2)
     component sq_u2 = ChunkedSquare(3, base);
     for (var i = 0; i < 3; i++) {
-        sq_u2.a[i] <== mul_u2.out[i];
+        sq_u2.a[i] <== u2[i];
     }
 
     component mul_sqrt = ChunkedMul(3, 3, base);
@@ -73,7 +67,7 @@ template RistrettoToBytes() {
     component mul_D2 = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
         mul_D2.in1[i] <== invsqrt.out[i];
-        mul_D2.in2[i] <== mul_u2.out[i];
+        mul_D2.in2[i] <== u2[i];
     }
 
     // Step 6: zInv = D1 * D2 * t

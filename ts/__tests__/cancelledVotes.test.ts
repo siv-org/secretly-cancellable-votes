@@ -522,8 +522,8 @@ describe('RistrettoToBytes().circom', () => {
     // Check circom intermediate results against JS
     // key: num_limbs, value: signal_name[]
     const vars_to_check = {
-      3: ['z_plus_y', 'z_minus_y', 'u1'],
-      6: ['u1_premod'],
+      3: ['z_plus_y', 'z_minus_y', 'u1', 'u2'],
+      // 6: ['u1_premod'],
     }
     for (const [limbs, signals] of Object.entries(vars_to_check)) {
       for (const signal of signals) {
