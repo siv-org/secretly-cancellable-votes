@@ -33,7 +33,7 @@ template RistrettoToBytes() {
 
     // Step 1: u1 = mod((z + y) * (z - y))
     signal z_plus_y[3] <== ChunkedAddAndTruncate(3, base)(z, y);
-    signal z_minus_y[3] <== ChunkedSubModP(3, base)(z, y);
+    signal z_minus_y[3] <== ChunkedSubModP()(z, y);
     signal u1[3] <== ChunkedMulModP()(z_plus_y, z_minus_y);
 
     // Step 2: u2 = mod(x * y)

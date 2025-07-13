@@ -27,33 +27,30 @@ template ChunkedSub(k, base) {
   underflow <== unit[k - 2].borrow;
 }
 
-template ChunkedSubModP(k, base) {
-    signal input a[k];
-    signal input b[k];
-    signal output out[k];
+template ChunkedSubModP() {
+    signal input a[3];
+    signal input b[3];
+    signal output out[3];
 
-    var p_chunks[3] = [ // p = 2^255 - 19, chunked
-      (2 ** 85 - 19),
-      (2 ** 85 - 1),
-      (2 ** 85 - 1)
-    ];
+    // p = 2^255 - 19, chunked
+    var p_chunks[3] = [2 ** 85 - 19, 2 ** 85 - 1, 2 ** 85 - 1];
 
-    component sub = ChunkedSub(k, base);
-    for (var i = 0; i < k; i++) {
+    component sub = ChunkedSub(3, 85);
+    for (var i = 0; i < 3; i++) {
         sub.a[i] <== a[i];
         sub.b[i] <== b[i];
     }
 
     // Always add p if underflow
-    component p_add = ChunkedAdd(k, 2, base);
-    for (var i = 0; i < k; i++) {
+    component p_add = ChunkedAdd(3, 2, 85);
+    for (var i = 0; i < 3; i++) {
         p_add.in[0][i] <== sub.out[i];
         p_add.in[1][i] <== p_chunks[i]; // p represented in k chunks of base bits
     }
 
-    component mux = Multiplexor2(k);
+    component mux = Multiplexor2(3);
     mux.sel <== sub.underflow;
-    for (var i = 0; i < k; i++) {
+    for (var i = 0; i < 3; i++) {
         mux.in[0][i] <== sub.out[i];       // no underflow, keep result
         mux.in[1][i] <== p_add.out[i];     // underflow, add p
     }
