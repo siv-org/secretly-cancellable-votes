@@ -503,6 +503,9 @@ describe('RistrettoToBytes().circom', () => {
     // const nonDebugPoint = ed.RistrettoPoint.BASE
     expect(nonDebugPoint.toRawBytes()).toEqual(expected.result)
 
+    // // Helper to remember multiples of 19 (clue: forgot a mod())
+    // console.log([1, 2, 3, 4, 5].map((x) => x * 19))
+
     // @ts-expect-error Overriding .ep privatization
     const ep = point.ep
     const witness = await circuit.calculateWitness({

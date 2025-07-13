@@ -95,3 +95,24 @@ template ChunkedAdderIrregular(m, n, base){
 function calculateNumOutputs(m, n, base) {
   return m + (n \ base) + 1;
 }
+
+/** ChunkedAdd() overflows, outputting more limbs than the input.
+  This one drops the overflow limb
+  Only safe because the one place we use it, in RistrettoToBytes, we know
+  the overflow limb is 0 (since z = 1).
+ */
+template ChunkedAddAndTruncate(n, base) {
+  signal input in1[n];
+  signal input in2[n];
+
+  signal tmp[n + 1] <== ChunkedAdd(n, 2, base)([in1, in2]);
+
+  // Verify our assumption that the overflow limb is 0
+  tmp[n] === 0;
+
+  // Drop the overflow limb
+  signal output out[n];
+  for (var i = 0; i < n; i++) {
+    out[i] <== tmp[i];
+  }
+}

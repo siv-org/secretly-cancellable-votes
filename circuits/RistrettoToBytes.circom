@@ -32,14 +32,9 @@ template RistrettoToBytes() {
                                 (INVSQRT_A_MINUS_D_WHOLE >> (2 * base)) % (1 << base)];
 
     // Step 1: u1 = mod((z + y) * (z - y))
-    signal z_plus_y[4] <== ChunkedAdd(3, 2, base)([z, y]);
+    signal z_plus_y[3] <== ChunkedAddAndTruncate(3, base)(z, y);
     signal z_minus_y[3] <== ChunkedSubModP(3, base)(z, y);
-
-    // TODO: Clean this up
-    component u1_premod_old = ChunkedMul(3, 3, base);
-    u1_premod_old.in2 <== z_minus_y;
-    for (var i = 0; i < 3; i++) u1_premod_old.in1[i] <== z_plus_y[i];
-    signal u1_premod[6] <== u1_premod_old.out;
+    signal u1_premod[6] <== ChunkedMul(3, 3, base)(z_plus_y, z_minus_y);
 
     signal u1[3] <== ChunkedModP()(u1_premod);
 
