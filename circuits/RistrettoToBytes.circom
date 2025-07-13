@@ -2,7 +2,7 @@ pragma circom 2.2.2;
 
 include "bitify.circom";
 include "ed25519/chunkedadd.circom";
-include "ed25519/chunkedsub.circom";
+include "ed25519/ChunkedSub.circom";
 include "ed25519/chunkedmul.circom";
 include "ChunkedSqrt.circom";
 include "./ChunkedModP.circom";

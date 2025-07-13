@@ -1,7 +1,7 @@
 pragma circom 2.2.2;
 
 include "./ed25519/chunkedmul.circom";
-include "./ed25519/chunkedsub.circom";
+include "./ed25519/ChunkedSub.circom";
 
 /** This takes a 6-chunk input and outputs a 3-chunk result, mod P (2^255 - 19) */
 template ChunkedModP() {

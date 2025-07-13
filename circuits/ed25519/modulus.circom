@@ -2,7 +2,7 @@ pragma circom 2.0.0;
 
 include "chunkedmul.circom";
 include "chunkedadd.circom";
-include "chunkedsub.circom";
+include "ChunkedSub.circom";
 include "mux1.circom";
 
 template ModulusWith25519Chunked51(n) {
