@@ -26,7 +26,7 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
     // pow = (u * v7)^{(p-5)/8}
     signal uv7[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(u, v7));
     // -- Confirmed above matches reference --
-    signal pow[chunks] <== ChunkedPow2_252_3(chunks, chunkBits, base)(uv7);
+    signal pow[chunks] <== ChunkedPow2_252_3()(uv7);
     // log("circuit=");
     // for (var i = 0; i < chunks; i++) log(pow[i]);
 
@@ -50,17 +50,16 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
 }
 
 // Efficiently computes a^{(p-5)/8} aka x^(2^252-3).
-template ChunkedPow2_252_3(chunks, chunkBits, base) {
-    signal input x[chunks];
-    signal output out[chunks];
+template ChunkedPow2_252_3() {
+    signal input x[3];
+    signal output out[3];
 
-    signal x2[chunks] <== ChunkedMulModP(chunks, chunks, base)(x, x);
-    signal b2[chunks] <== ChunkedMulModP(chunks, chunks, base)(x2, x);
+    signal x2[3] <== ChunkedMulModP()(x, x);
+    signal b2[3] <== ChunkedMulModP()(x2, x);
     // -- Confirmed above matches reference --
 
     log("circuit:");
-    for (var i = 0; i < chunks; i++) log(b2[i]);
-
+    for (var i = 0; i < 3; i++) log(b2[i]);
 
     // // Pre-declare all squaring components
     // component sqs[252];
