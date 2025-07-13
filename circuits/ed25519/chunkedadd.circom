@@ -6,7 +6,7 @@ template ChunkedAdd(m, n, base){
   var numOutputs = calculateNumOutputs(m, n, base);
   var i;
   var j;
-  var power =  2 ** base;
+  var power = 2 ** base;
 
   signal input in[n][m];
   signal psum[m];
@@ -101,18 +101,14 @@ function calculateNumOutputs(m, n, base) {
   Only safe because the one place we use it, in RistrettoToBytes, we know
   the overflow limb is 0 (since z = 1).
  */
-template ChunkedAddAndTruncate(n, base) {
-  signal input in1[n];
-  signal input in2[n];
+template ChunkedAddAndTruncate() {
+  signal input in1[3], in2[3];
 
-  signal tmp[n + 1] <== ChunkedAdd(n, 2, base)([in1, in2]);
+  signal tmp[3 + 1] <== ChunkedAdd(3, 2, 85)([in1, in2]);
 
-  // Verify our assumption that the overflow limb is 0
-  tmp[n] === 0;
+  // Verify assumption: overflow limb == 0
+  tmp[3] === 0;
 
   // Drop the overflow limb
-  signal output out[n];
-  for (var i = 0; i < n; i++) {
-    out[i] <== tmp[i];
-  }
+  signal output out[3] <== [tmp[0], tmp[1], tmp[2]];
 }
