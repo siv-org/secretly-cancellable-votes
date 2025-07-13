@@ -16,23 +16,18 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
     signal output out[chunks];
 
     // v3 = v * v * v
-    component v2 = ChunkedMul(chunks, chunkBits, base);
-    for (var i = 0; i < chunks; i++) {
-        v2.in1[i] <== v[i];
-        v2.in2[i] <== v[i];
-    }
+    signal v2[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v, v));
+    signal v3[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v2, v));
 
-    component v3 = ChunkedMul(chunks, chunkBits, base);
-    for (var i = 0; i < chunks; i++) {
-        v3.in1[i] <== v2.out[i];
-        v3.in2[i] <== v[i];
-    }
+    log("circuit=");
+    for (var i = 0; i < chunks; i++) log(v3[i]);
+    // Confirmed up to here matching reference
 
     // v7 = v3 * v3 * v
     component v3_2 = ChunkedMul(chunks, chunkBits, base);
     for (var i = 0; i < chunks; i++) {
-        v3_2.in1[i] <== v3.out[i];
-        v3_2.in2[i] <== v3.out[i];
+        v3_2.in1[i] <== v3[i];
+        v3_2.in2[i] <== v3[i];
     }
 
     component v7 = ChunkedMul(chunks, chunkBits, base);
@@ -57,7 +52,7 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
     component uv3 = ChunkedMul(chunks, chunkBits, base);
     for (var i = 0; i < chunks; i++) {
         uv3.in1[i] <== u[i];
-        uv3.in2[i] <== v3.out[i];
+        uv3.in2[i] <== v3[i];
     }
 
     component x = ChunkedMul(chunks, chunkBits, base);
