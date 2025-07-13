@@ -1,4 +1,5 @@
-pragma circom 2.0.0;
+pragma circom 2.2.2;
+
 include "./lt.circom";
 
 template ChunkedSub(k, base) {
@@ -28,34 +29,20 @@ template ChunkedSub(k, base) {
 }
 
 template ChunkedSubModP() {
-    signal input a[3];
-    signal input b[3];
-    signal output out[3];
+    signal input a[3], b[3];
 
-    // p = 2^255 - 19, chunked
-    var p_chunks[3] = [2 ** 85 - 19, 2 ** 85 - 1, 2 ** 85 - 1];
+    // 1. Get difference: a - b
+    signal diff[3], underflow;
+    (diff, underflow) <== ChunkedSub(3, 85)(a, b);
 
-    component sub = ChunkedSub(3, 85);
-    for (var i = 0; i < 3; i++) {
-        sub.a[i] <== a[i];
-        sub.b[i] <== b[i];
-    }
+    // 2. If underflow (a < b), add p (2^255 - 19)
+    var p[3] = [2 ** 85 - 19, 2 ** 85 - 1, 2 ** 85 - 1];
+    signal with_p[4] <== ChunkedAdd(3, 2, 85)([diff, p]);
 
-    // Always add p if underflow
-    component p_add = ChunkedAdd(3, 2, 85);
-    for (var i = 0; i < 3; i++) {
-        p_add.in[0][i] <== sub.out[i];
-        p_add.in[1][i] <== p_chunks[i]; // p represented in k chunks of base bits
-    }
-
-    component mux = Multiplexor2(3);
-    mux.sel <== sub.underflow;
-    for (var i = 0; i < 3; i++) {
-        mux.in[0][i] <== sub.out[i];       // no underflow, keep result
-        mux.in[1][i] <== p_add.out[i];     // underflow, add p
-    }
-
-    out <== mux.out;
+    // 3. Select between orig diff & with_p
+    signal output out[3] <== Multiplexor2(3)(underflow, [diff, [with_p[0], with_p[1], with_p[2]]]);
+    // `with_p` has an extra 4th limb, but we ignore it,
+    // because the underflow implies it's empty.
 }
 
 template ModSub(base) {
