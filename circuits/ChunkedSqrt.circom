@@ -2,15 +2,15 @@ pragma circom 2.2.2;
 
 include "./ed25519/chunkedmul.circom";
 
-template ChunkedInvertSqrt(chunks, chunkBits, base) {
+template ChunkedInvertSqrt(chunks, base) {
     signal input a[chunks];
 
     var ONE[3] = [1, 0, 0];
 
-    signal output out[chunks] <== ChunkedUVRatio(chunks, chunkBits, base)(ONE, a);
+    signal output out[chunks] <== ChunkedUVRatio(chunks, base)(ONE, a);
 }
 
-template ChunkedUVRatio(chunks, chunkBits, base) {
+template ChunkedUVRatio(chunks, base) {
     signal input u[chunks];
     signal input v[chunks];
     signal output out[chunks];
@@ -31,13 +31,13 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
     // for (var i = 0; i < chunks; i++) log(pow[i]);
 
     // x = (u * v3) * pow
-    component uv3 = ChunkedMul(chunks, chunkBits, base);
+    component uv3 = ChunkedMul(chunks, chunks, base);
     for (var i = 0; i < chunks; i++) {
         uv3.in1[i] <== u[i];
         uv3.in2[i] <== v3[i];
     }
 
-    component x = ChunkedMul(chunks, chunkBits, base);
+    component x = ChunkedMul(chunks, chunks, base);
     for (var i = 0; i < chunks; i++) {
         x.in1[i] <== uv3.out[i];
         x.in2[i] <== pow[i];
