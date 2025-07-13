@@ -10,6 +10,10 @@ include "./ChunkedModP.circom";
 template RistrettoToBytes() {
     // Input: x, y, z, t in chunked form
     signal input P[4][3];
+    signal x[3] <== P[0];
+    signal y[3] <== P[1];
+    signal z[3] <== P[2];
+    signal t[3] <== P[3];
 
     // Output compressed s in bytes
     signal output s_bytes[32];
@@ -28,31 +32,22 @@ template RistrettoToBytes() {
                                 (INVSQRT_A_MINUS_D_WHOLE >> (2 * base)) % (1 << base)];
 
     // Step 1: u1 = mod((z + y) * (z - y))
-    component z_plus_y = ChunkedAdd(3, 2, base);
-    component z_minus_y = ChunkedSubModP(3, base);
-    for (var i = 0; i < 3; i++) {
-        z_plus_y.in[0][i] <== P[2][i]; // z
-        z_plus_y.in[1][i] <== P[1][i]; // y
-        z_minus_y.a[i] <== P[2][i];
-        z_minus_y.b[i] <== P[1][i];
-    }
+    signal z_plus_y[4] <== ChunkedAdd(3, 2, base)([z, y]);
+    signal z_minus_y[3] <== ChunkedSubModP(3, base)(z, y);
 
-    component u1_premod = ChunkedMul(3, 3, base);
-    for (var i = 0; i < 3; i++) {
-        u1_premod.in1[i] <== z_plus_y.out[i];
-        u1_premod.in2[i] <== z_minus_y.out[i];
-    }
+    // TODO: Clean this up
+    component u1_premod_old = ChunkedMul(3, 3, base);
+    u1_premod_old.in2 <== z_minus_y;
+    for (var i = 0; i < 3; i++) u1_premod_old.in1[i] <== z_plus_y[i];
+    signal u1_premod[6] <== u1_premod_old.out;
 
-    component u1 = ChunkedModP();
-    for (var i = 0; i < 6; i++) {
-        u1.in[i] <== u1_premod.out[i];
-    }
+    signal u1[3] <== ChunkedModP()(u1_premod);
 
     // Step 2: u2 = x * y
     component mul_u2 = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
-        mul_u2.in1[i] <== P[0][i]; // x
-        mul_u2.in2[i] <== P[1][i]; // y
+        mul_u2.in1[i] <== x[i];
+        mul_u2.in2[i] <== y[i];
     }
 
     // Step 3: invsqrt = invertSqrt(u1 * u2^2)
@@ -63,7 +58,7 @@ template RistrettoToBytes() {
 
     component mul_sqrt = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
-        mul_sqrt.in1[i] <== u1.out[i];
+        mul_sqrt.in1[i] <== u1[i];
         mul_sqrt.in2[i] <== sq_u2.out[i];
     }
 
@@ -76,7 +71,7 @@ template RistrettoToBytes() {
     component mul_D1 = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
         mul_D1.in1[i] <== invsqrt.out[i];
-        mul_D1.in2[i] <== u1.out[i];
+        mul_D1.in2[i] <== u1[i];
     }
 
     // Step 5: D2 = invsqrt * u2
@@ -96,13 +91,13 @@ template RistrettoToBytes() {
     component mul_zInv = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
         mul_zInv.in1[i] <== mul_zInv_temp.out[i];
-        mul_zInv.in2[i] <== P[3][i]; // t
+        mul_zInv.in2[i] <== t[i];
     }
 
     // Step 7: Check if t * zInv is negative
     component mul_t_zInv = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
-        mul_t_zInv.in1[i] <== P[3][i]; // t
+        mul_t_zInv.in1[i] <== t[i];
         mul_t_zInv.in2[i] <== mul_zInv.out[i];
     }
 
@@ -117,9 +112,9 @@ template RistrettoToBytes() {
     component mul_x_sqrt_m1 = ChunkedMul(3, 3, base);
     component mul_y_sqrt_m1 = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
-        mul_x_sqrt_m1.in1[i] <== P[0][i]; // x
+        mul_x_sqrt_m1.in1[i] <== x[i];
         mul_x_sqrt_m1.in2[i] <== SQRT_M1[i];
-        mul_y_sqrt_m1.in1[i] <== P[1][i]; // y
+        mul_y_sqrt_m1.in1[i] <== y[i];
         mul_y_sqrt_m1.in2[i] <== SQRT_M1[i];
     }
 
@@ -128,9 +123,9 @@ template RistrettoToBytes() {
     mux_x.sel <== isNegative_t_zInv.out;
     mux_y.sel <== isNegative_t_zInv.out;
     for (var i = 0; i < 3; i++) {
-        mux_x.in[0][i] <== P[0][i]; // original x
+        mux_x.in[0][i] <== x[i];
         mux_x.in[1][i] <== mul_y_sqrt_m1.out[i]; // y * sqrt(-1)
-        mux_y.in[0][i] <== P[1][i]; // original y
+        mux_y.in[0][i] <== y[i];
         mux_y.in[1][i] <== mul_x_sqrt_m1.out[i]; // x * sqrt(-1)
     }
 
@@ -162,7 +157,7 @@ template RistrettoToBytes() {
     // Step 11: Compute s = (z - y) * D
     component sub_z_y_final = ChunkedSub(3, base);
     for (var i = 0; i < 3; i++) {
-        sub_z_y_final.a[i] <== P[2][i]; // z
+        sub_z_y_final.a[i] <== z[i];
         sub_z_y_final.b[i] <== mux_y_final.out[i]; // adjusted y
     }
 
@@ -213,13 +208,6 @@ template RistrettoToBytes() {
     for (var i = 0; i < 32; i++) {
         s_bytes[i] <== sToBytes.out[i];
     }
-
-    // Debug
-    signal z_plus_y_out[4] <== z_plus_y.out; // We can ignore the extra carry limb
-    signal z_minus_y_out[3] <== z_minus_y.out;
-    signal u1_out[3] <== u1.out;
-    signal u1_premod_out[6] <== u1_premod.out;
-    // End debug
 }
 
 template Multiplexor2(chunks) {

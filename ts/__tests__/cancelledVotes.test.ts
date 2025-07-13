@@ -526,7 +526,7 @@ describe('RistrettoToBytes().circom', () => {
         const cc_signal = await getVectorSignal(
           circuit,
           witness,
-          `${signal}_out`,
+          signal,
           +limbs
         )
         const cc_dechunked = cc_signal.reduce(

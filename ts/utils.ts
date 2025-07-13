@@ -96,6 +96,7 @@ export const getVectorSignal = async <N extends number>(
   const result: bigint[] = []
   for (let i = 0; i < length; i++) {
     const signalName = `main.${outputSignalName}[${i}]`
+    // console.log(signalName, values[signalName])
     result[i] = BigInt(String(values[signalName]))
   }
 
