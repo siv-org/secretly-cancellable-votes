@@ -453,9 +453,9 @@ class RistrettoPoint {
     // Square root always exists
     const u2_sq = mod(u2 * u2)
     const u1_times_u2_sq = mod(u1 * u2_sq)
-    console.log('\n\ninverting for toRawBytes:')
+    console.log('\n\njs invertSqrt():')
     const { value: invsqrt } = invertSqrt(u1_times_u2_sq) // 3
-    console.log('\n')
+    console.log()
 
     const D1 = mod(invsqrt * u1) // 4
     const D2 = mod(invsqrt * u2) // 5
@@ -906,6 +906,7 @@ function pow_2_252_3(x: bigint) {
   const _40n = BigInt(40)
   const _80n = BigInt(80)
   const x2 = (x * x) % P
+  console.log(chunkBigInt(x2).join('\n'))
   const b2 = (x2 * x) % P // x^3, 11
   const b4 = (pow2(b2, _2n) * b2) % P // x^15, 1111
   const b5 = (pow2(b4, _1n) * x) % P // x^31
@@ -929,7 +930,7 @@ function uvRatio(u: bigint, v: bigint): { isValid: boolean, value: bigint } {
   const v7 = mod(v3 * v3 * v);                // v⁷
   const uv7 = u * v7
   const pow = pow_2_252_3(uv7).pow_p_5_8;
-  console.log(chunkBigInt(pow))
+  // console.log(chunkBigInt(pow))
   let x = mod(u * v3 * pow);                  // (uv³)(uv⁷)^(p-5)/8
   const vx2 = mod(v * x * x);                 // vx²
   const root1 = x;                            // First root candidate

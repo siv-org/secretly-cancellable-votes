@@ -27,8 +27,8 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
     signal uv7[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(u, v7));
     // -- Confirmed above matches reference --
     signal pow[chunks] <== ChunkedPow2_252_3(chunks, chunkBits, base)(uv7);
-    log("circuit=");
-    for (var i = 0; i < chunks; i++) log(pow[i]);
+    // log("circuit=");
+    // for (var i = 0; i < chunks; i++) log(pow[i]);
 
     // x = (u * v3) * pow
     component uv3 = ChunkedMul(chunks, chunkBits, base);
@@ -51,38 +51,43 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
 
 // Efficiently computes a^{(p-5)/8} aka x^(2^252-3).
 template ChunkedPow2_252_3(chunks, chunkBits, base) {
-    signal input in[chunks];
+    signal input x[chunks];
     signal output out[chunks];
 
-    signal tmp[chunks];
+    signal x2[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(x, x));
+    // -- Confirmed above matches reference --
 
-    // Pre-declare all squaring components
-    component sqs[252];
-    for (var j = 0; j < 252; j++) {
-        sqs[j] = ChunkedMul(chunks, chunks, base);
-    }
+    log("circuit:");
+    for (var i = 0; i < chunks; i++) log(x2[i]);
 
-    // Connect chaining
-    for (var j = 0; j < 252; j++) {
-        for (var i = 0; i < chunks; i++) {
-            if (j == 0) {
-                sqs[j].in1[i] <== in[i];
-                sqs[j].in2[i] <== in[i];
-            } else {
-                sqs[j].in1[i] <== sqs[j-1].out[i];
-                sqs[j].in2[i] <== sqs[j-1].out[i];
-            }
-        }
-    }
 
-    // Final multiply by input
-    component mul = ChunkedMul(chunks, chunkBits, base);
-    for (var i = 0; i < chunks; i++) {
-        mul.in1[i] <== sqs[251].out[i];
-        mul.in2[i] <== in[i];
-    }
+    // // Pre-declare all squaring components
+    // component sqs[252];
+    // for (var j = 0; j < 252; j++) {
+    //     sqs[j] = ChunkedMul(chunks, chunks, base);
+    // }
 
-    for (var i = 0; i < chunks; i++) {
-        out[i] <== mul.out[i];
-    }
+    // // Connect chaining
+    // for (var j = 0; j < 252; j++) {
+    //     for (var i = 0; i < chunks; i++) {
+    //         if (j == 0) {
+    //             sqs[j].in1[i] <== in[i];
+    //             sqs[j].in2[i] <== in[i];
+    //         } else {
+    //             sqs[j].in1[i] <== sqs[j-1].out[i];
+    //             sqs[j].in2[i] <== sqs[j-1].out[i];
+    //         }
+    //     }
+    // }
+
+    // // Final multiply by input
+    // component mul = ChunkedMul(chunks, chunkBits, base);
+    // for (var i = 0; i < chunks; i++) {
+    //     mul.in1[i] <== sqs[251].out[i];
+    //     mul.in2[i] <== in[i];
+    // }
+
+    // for (var i = 0; i < chunks; i++) {
+    //     out[i] <== mul.out[i];
+    // }
 }

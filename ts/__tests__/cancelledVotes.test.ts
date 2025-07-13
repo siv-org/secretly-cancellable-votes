@@ -512,6 +512,7 @@ describe('RistrettoToBytes().circom', () => {
     const witness = await circuit.calculateWitness({
       P: chunk(xyztObjToArray(ep)),
     })
+    console.log()
 
     // console.log('z > y', ep.z > ep.y)
     // console.log('z', ep.z)
