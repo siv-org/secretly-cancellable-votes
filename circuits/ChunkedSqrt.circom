@@ -16,15 +16,15 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
     signal output out[chunks];
 
     // v3 = v * v * v
-    signal v2[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v, v));
-    signal v3[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v2, v));
+    signal v2[chunks] <== ChunkedMulModP()(v, v);
+    signal v3[chunks] <== ChunkedMulModP()(v2, v);
 
     // v7 = v3 * v3 * v
-    signal v6[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v3, v3));
-    signal v7[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v6, v));
+    signal v6[chunks] <== ChunkedMulModP()(v3, v3);
+    signal v7[chunks] <== ChunkedMulModP()(v6, v);
 
     // pow = (u * v7)^{(p-5)/8}
-    signal uv7[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(u, v7));
+    signal uv7[chunks] <== ChunkedMulModP()(u, v7);
     // -- Confirmed above matches reference --
     signal pow[chunks] <== ChunkedPow2_252_3()(uv7);
     // log("circuit=");
