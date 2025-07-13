@@ -94,16 +94,18 @@ template ChunkedPow2523(chunks, chunkBits, base) {
     // Pre-declare all squaring components
     component sqs[252];
     for (var j = 0; j < 252; j++) {
-        sqs[j] = ChunkedSquare(chunks, base);
+        sqs[j] = ChunkedMul(chunks, chunks, base);
     }
 
     // Connect chaining
     for (var j = 0; j < 252; j++) {
         for (var i = 0; i < chunks; i++) {
             if (j == 0) {
-                sqs[j].a[i] <== in[i];
+                sqs[j].in1[i] <== in[i];
+                sqs[j].in2[i] <== in[i];
             } else {
-                sqs[j].a[i] <== sqs[j-1].out[i];
+                sqs[j].in1[i] <== sqs[j-1].out[i];
+                sqs[j].in2[i] <== sqs[j-1].out[i];
             }
         }
     }

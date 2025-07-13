@@ -451,7 +451,8 @@ class RistrettoPoint {
     const u2 = mod(x * y) // 2
     // Square root always exists
     const u2_sq = mod(u2 * u2)
-    const { value: invsqrt } = invertSqrt(mod(u1 * u2_sq)) // 3
+    const u1_times_u2_sq = mod(u1 * u2_sq)
+    const { value: invsqrt } = invertSqrt(u1_times_u2_sq) // 3
     const D1 = mod(invsqrt * u1) // 4
     const D2 = mod(invsqrt * u2) // 5
     const zInv = mod(D1 * D2 * t) // 6
@@ -479,6 +480,7 @@ class RistrettoPoint {
         u1,
         u2,
         u2_sq,
+        u1_times_u2_sq,
         invsqrt,
         D1,
         D2,
