@@ -52,7 +52,8 @@ export function shouldRecompile(file: string): boolean {
   const compiledR1cs = statSync(pathToR1cs, { throwIfNoEntry: false })
   const changedSinceCompile =
     dotCircomMtime > (compiledR1cs?.mtime || new Date(0))
-  if (changedSinceCompile) console.log('\nRecompiling', YELLOW, file, RESET)
+  if (changedSinceCompile && compiledR1cs)
+    console.log('\nRecompiling', YELLOW, file, RESET)
 
   return changedSinceCompile
 }
