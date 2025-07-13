@@ -52,17 +52,9 @@ template ModSub(base) {
 }
 
 template ModSubThree(base) {
-  signal input a;
-  signal input b;
-  signal input c;
+  signal input a, b, c;
   assert(a - b - c + (1 << base) >= 0);
-  signal output out;
-  signal output borrow;
-  signal b_plus_c;
-  b_plus_c <== b + c;
-  component lt = LessThanBounded(base+1);
-  lt.in[0] <== a;
-  lt.in[1] <== b_plus_c;
-  borrow <== lt.out;
-  out <== borrow * (1 << base) + a - b_plus_c;
+
+  signal output borrow <== LessThanBounded(base+1)([a, b + c]);
+  signal output out <== borrow * (1 << base) + a - b - c;
 }
