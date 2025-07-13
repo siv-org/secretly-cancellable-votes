@@ -46,15 +46,9 @@ template ChunkedSubModP() {
 }
 
 template ModSub(base) {
-  signal input a;
-  signal input b;
-  signal output out;
-  signal output borrow;
-  component lt = LessThanBounded(base);
-  lt.in[0] <== a;
-  lt.in[1] <== b;
-  borrow <== lt.out;
-  out <== borrow * (1 << base) + a - b;
+  signal input a, b;
+  signal output borrow <== LessThanBounded(base)([a, b]);
+  signal output out <== borrow * (1 << base) + a - b;
 }
 
 template ModSubThree(base) {
