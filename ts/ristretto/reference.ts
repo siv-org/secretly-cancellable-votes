@@ -10,6 +10,7 @@
 // In browser the line is automatically removed during build time: uses crypto.subtle instead.
 import * as nodeCrypto from 'crypto'
 import bn128 from './bn128_constant'
+import { chunkBigInt } from '../utils'
 
 // Be friendly to bad ECMAScript parsers by not using bigint literals like 123n
 const _0n = BigInt(0)
@@ -926,6 +927,7 @@ function pow_2_252_3(x: bigint) {
 function uvRatio(u: bigint, v: bigint): { isValid: boolean, value: bigint } {
   const v3 = mod(v * v * v);                  // v³
   const v7 = mod(v3 * v3 * v);                // v⁷
+  console.log(chunkBigInt(v7))
   const pow = pow_2_252_3(u * v7).pow_p_5_8;
   let x = mod(u * v3 * pow);                  // (uv³)(uv⁷)^(p-5)/8
   const vx2 = mod(v * x * x);                 // vx²

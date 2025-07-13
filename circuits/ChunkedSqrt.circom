@@ -19,28 +19,19 @@ template ChunkedUVRatio(chunks, chunkBits, base) {
     signal v2[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v, v));
     signal v3[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v2, v));
 
-    log("circuit=");
-    for (var i = 0; i < chunks; i++) log(v3[i]);
-    // Confirmed up to here matching reference
-
     // v7 = v3 * v3 * v
-    component v3_2 = ChunkedMul(chunks, chunkBits, base);
-    for (var i = 0; i < chunks; i++) {
-        v3_2.in1[i] <== v3[i];
-        v3_2.in2[i] <== v3[i];
-    }
+    signal v6[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v3, v3));
+    signal v7[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(v6, v));
 
-    component v7 = ChunkedMul(chunks, chunkBits, base);
-    for (var i = 0; i < chunks; i++) {
-        v7.in1[i] <== v3_2.out[i];
-        v7.in2[i] <== v[i];
-    }
+    log("circuit=");
+    for (var i = 0; i < chunks; i++) log(v7[i]);
+    // Confirmed up to here matching reference
 
     // pow = (u * v7)^{(p-5)/8}
     component uv7 = ChunkedMul(chunks, chunkBits, base);
     for (var i = 0; i < chunks; i++) {
         uv7.in1[i] <== u[i];
-        uv7.in2[i] <== v7.out[i];
+        uv7.in2[i] <== v7[i];
     }
 
     component pow = ChunkedPow2523(chunks, chunkBits, base);
