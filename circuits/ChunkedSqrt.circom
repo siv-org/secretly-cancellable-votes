@@ -4,22 +4,10 @@ include "./ed25519/chunkedmul.circom";
 
 template ChunkedInvertSqrt(chunks, chunkBits, base) {
     signal input a[chunks];
-    signal output out[chunks];
 
-    signal ONE[3];
-    ONE[0] <== 1;
-    ONE[1] <== 0;
-    ONE[2] <== 0;
+    var ONE[3] = [1, 0, 0];
 
-    component uvRatio = ChunkedUVRatio(chunks, chunkBits, base);
-    for (var i = 0; i < chunks; i++) {
-        uvRatio.u[i] <== ONE[i]; // chunked 1
-        uvRatio.v[i] <== a[i];
-    }
-
-    for (var i = 0; i < chunks; i++) {
-        out[i] <== uvRatio.out[i];
-    }
+    signal output out[chunks] <== ChunkedUVRatio(chunks, chunkBits, base)(ONE, a);
 }
 
 template ChunkedUVRatio(chunks, chunkBits, base) {
