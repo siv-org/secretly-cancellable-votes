@@ -55,10 +55,11 @@ template ChunkedPow2_252_3(chunks, chunkBits, base) {
     signal output out[chunks];
 
     signal x2[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(x, x));
+    signal b2[chunks] <== ChunkedModP()(ChunkedMul(chunks, chunkBits, base)(x2, x));
     // -- Confirmed above matches reference --
 
     log("circuit:");
-    for (var i = 0; i < chunks; i++) log(x2[i]);
+    for (var i = 0; i < chunks; i++) log(b2[i]);
 
 
     // // Pre-declare all squaring components

@@ -906,8 +906,8 @@ function pow_2_252_3(x: bigint) {
   const _40n = BigInt(40)
   const _80n = BigInt(80)
   const x2 = (x * x) % P
-  console.log(chunkBigInt(x2).join('\n'))
   const b2 = (x2 * x) % P // x^3, 11
+  console.log(chunkBigInt(b2).join('\n'))
   const b4 = (pow2(b2, _2n) * b2) % P // x^15, 1111
   const b5 = (pow2(b4, _1n) * x) % P // x^31
   const b10 = (pow2(b5, _5n) * b5) % P
