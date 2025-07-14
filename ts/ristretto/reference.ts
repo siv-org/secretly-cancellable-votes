@@ -930,8 +930,8 @@ function uvRatio(u: bigint, v: bigint): { isValid: boolean, value: bigint } {
   const uv7 = u * v7
   const pow = pow_2_252_3(uv7).pow_p_5_8;
   let x = mod(u * v3 * pow);                  // (uv³)(uv⁷)^(p-5)/8
-  console.log(chunkBigInt(x).join('\n'))
   const vx2 = mod(v * x * x);                 // vx²
+  console.log(chunkBigInt(vx2).join('\n'))
   const root1 = x;                            // First root candidate
   const root2 = mod(x * SQRT_M1);             // Second root candidate
   const useRoot1 = vx2 === u;                 // If vx² = u (mod p), x is a square root

@@ -27,17 +27,20 @@ template ChunkedUVRatio(chunks, base) {
     signal uv7[chunks] <== ChunkedMulModP()(u, v7);
     signal pow[chunks] <== ChunkedPow2_252_3()(uv7);
 
-    // x = (u * v3) * pow
+    // Reference reassigns x, but circom doesn't allow that,
+    // so we'll call them x_1,2,3, then mux() between.
+
+    // x_1 = (u * v3) * pow
     signal uv3[chunks] <== ChunkedMulModP()(u, v3);
-    signal x[chunks] <== ChunkedMulModP()(uv3, pow);
+    signal x_1[chunks] <== ChunkedMulModP()(uv3, pow);
+
+    signal vx2[chunks] <== ChunkedMulModP()(v, ChunkedMulModP()(x_1, x_1));
     // -- Confirmed above matches reference --
     log("circuit=");
-    for (var i = 0; i < chunks; i++) log(x[i]);
+    for (var i = 0; i < chunks; i++) log(vx2[i]);
 
     // skip root checks (like vx² == u or -u) for now to keep ZK minimal
-    for (var i = 0; i < chunks; i++) {
-        out[i] <== x[i];
-    }
+    out <== x_1;
 }
 
 // Efficiently computes a^{(p-5)/8} aka x^(2^252-3).
