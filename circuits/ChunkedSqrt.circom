@@ -26,26 +26,17 @@ template ChunkedUVRatio(chunks, base) {
     // pow = (u * v7)^{(p-5)/8}
     signal uv7[chunks] <== ChunkedMulModP()(u, v7);
     signal pow[chunks] <== ChunkedPow2_252_3()(uv7);
-    // -- Confirmed above matches reference --
-    log("circuit=");
-    for (var i = 0; i < chunks; i++) log(pow[i]);
 
     // x = (u * v3) * pow
-    component uv3 = ChunkedMul(chunks, chunks, base);
-    for (var i = 0; i < chunks; i++) {
-        uv3.in1[i] <== u[i];
-        uv3.in2[i] <== v3[i];
-    }
-
-    component x = ChunkedMul(chunks, chunks, base);
-    for (var i = 0; i < chunks; i++) {
-        x.in1[i] <== uv3.out[i];
-        x.in2[i] <== pow[i];
-    }
+    signal uv3[chunks] <== ChunkedMulModP()(u, v3);
+    signal x[chunks] <== ChunkedMulModP()(uv3, pow);
+    // -- Confirmed above matches reference --
+    log("circuit=");
+    for (var i = 0; i < chunks; i++) log(x[i]);
 
     // skip root checks (like vx² == u or -u) for now to keep ZK minimal
     for (var i = 0; i < chunks; i++) {
-        out[i] <== x.out[i];
+        out[i] <== x[i];
     }
 }
 
