@@ -25,10 +25,10 @@ template ChunkedUVRatio(chunks, base) {
 
     // pow = (u * v7)^{(p-5)/8}
     signal uv7[chunks] <== ChunkedMulModP()(u, v7);
-    // -- Confirmed above matches reference --
     signal pow[chunks] <== ChunkedPow2_252_3()(uv7);
-    // log("circuit=");
-    // for (var i = 0; i < chunks; i++) log(pow[i]);
+    // -- Confirmed above matches reference --
+    log("circuit=");
+    for (var i = 0; i < chunks; i++) log(pow[i]);
 
     // x = (u * v3) * pow
     component uv3 = ChunkedMul(chunks, chunks, base);
@@ -57,40 +57,17 @@ template ChunkedPow2_252_3() {
     signal x2[3] <== ChunkedMulModP()(x, x);
     signal b2[3] <== ChunkedMulModP()(x2, x);
     signal b4[3] <== ChunkedMulModP()(ChunkedPow2ModP(2)(b2), b2);
-    // -- Confirmed above matches reference --
-    log("circuit:");
-    for (var i = 0; i < 3; i++) log(b4[i]);
+    signal b5[3] <== ChunkedMulModP()(ChunkedPow2ModP(1)(b4), x);
+    signal b10[3] <== ChunkedMulModP()(ChunkedPow2ModP(5)(b5), b5);
+    signal b20[3] <== ChunkedMulModP()(ChunkedPow2ModP(10)(b10), b10);
+    signal b40[3] <== ChunkedMulModP()(ChunkedPow2ModP(20)(b20), b20);
+    signal b80[3] <== ChunkedMulModP()(ChunkedPow2ModP(40)(b40), b40);
+    signal b160[3] <== ChunkedMulModP()(ChunkedPow2ModP(80)(b80), b80);
+    signal b240[3] <== ChunkedMulModP()(ChunkedPow2ModP(80)(b160), b80);
+    signal b250[3] <== ChunkedMulModP()(ChunkedPow2ModP(10)(b240), b10);
+    signal pow_p_5_8[3] <== ChunkedMulModP()(ChunkedPow2ModP(2)(b250), x);
 
-
-    // // Pre-declare all squaring components
-    // component sqs[252];
-    // for (var j = 0; j < 252; j++) {
-    //     sqs[j] = ChunkedMul(chunks, chunks, base);
-    // }
-
-    // // Connect chaining
-    // for (var j = 0; j < 252; j++) {
-    //     for (var i = 0; i < chunks; i++) {
-    //         if (j == 0) {
-    //             sqs[j].in1[i] <== in[i];
-    //             sqs[j].in2[i] <== in[i];
-    //         } else {
-    //             sqs[j].in1[i] <== sqs[j-1].out[i];
-    //             sqs[j].in2[i] <== sqs[j-1].out[i];
-    //         }
-    //     }
-    // }
-
-    // // Final multiply by input
-    // component mul = ChunkedMul(chunks, chunkBits, base);
-    // for (var i = 0; i < chunks; i++) {
-    //     mul.in1[i] <== sqs[251].out[i];
-    //     mul.in2[i] <== in[i];
-    // }
-
-    // for (var i = 0; i < chunks; i++) {
-    //     out[i] <== mul.out[i];
-    // }
+    out <== pow_p_5_8;
 }
 
 // Does x ^ (2 ^ power) mod p
