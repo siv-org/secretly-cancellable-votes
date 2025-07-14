@@ -56,10 +56,17 @@ template ChunkedPow2_252_3() {
 
     signal x2[3] <== ChunkedMulModP()(x, x);
     signal b2[3] <== ChunkedMulModP()(x2, x);
+
+    // Temp debug Pow2ModP
+    signal foo[3] <== ChunkedPow2ModP(2)([2, 0, 0]);
+    log("circuit:");
+    for (var i = 0; i < 3; i++) log(foo[i]);
     // -- Confirmed above matches reference --
 
-    log("circuit:");
-    for (var i = 0; i < 3; i++) log(b2[i]);
+    signal b3[3] <== ChunkedPow2ModP(2)(b2);
+    signal b4[3] <== ChunkedMulModP()(b3, b2);
+
+    // for (var i = 0; i < 3; i++) log(b3[i]);
 
     // // Pre-declare all squaring components
     // component sqs[252];
@@ -90,4 +97,18 @@ template ChunkedPow2_252_3() {
     // for (var i = 0; i < chunks; i++) {
     //     out[i] <== mul.out[i];
     // }
+}
+
+// Does x ^ (2 ^ power) mod p
+// eg: pow2(30, 4) == 30 ^ (2 ^ 4)
+template ChunkedPow2ModP(power) {
+    signal input x[3];
+
+    signal tmp[power + 1][3];
+    tmp[0] <== x;
+    for (var i = 1; i <= power; i++) {
+        tmp[i] <== ChunkedMulModP()(tmp[i - 1], tmp[i - 1]);
+    }
+
+    signal output out[3] <== tmp[power];
 }
