@@ -56,12 +56,10 @@ template ChunkedPow2_252_3() {
 
     signal x2[3] <== ChunkedMulModP()(x, x);
     signal b2[3] <== ChunkedMulModP()(x2, x);
-
-    signal b3[3] <== ChunkedPow2ModP(2)(b2);
-    log("circuit:");
-    for (var i = 0; i < 3; i++) log(b3[i]);
+    signal b4[3] <== ChunkedMulModP()(ChunkedPow2ModP(2)(b2), b2);
     // -- Confirmed above matches reference --
-    signal b4[3] <== ChunkedMulModP()(b3, b2);
+    log("circuit:");
+    for (var i = 0; i < 3; i++) log(b4[i]);
 
 
     // // Pre-declare all squaring components
