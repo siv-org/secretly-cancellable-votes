@@ -40,13 +40,11 @@ template ChunkedModP() {
 template AddSingleChunk(base) {
     signal input in1;
     signal input in2;
-    signal output out;
 
     var power = 2 ** base;
-    signal output carry;
 
-    carry <-- (in1 + in2) \ power;
-    out   <-- (in1 + in2) % power;
+    signal output out   <-- (in1 + in2) % power;
+    signal output carry <-- (in1 + in2) \ power;
 
     // Enforce modular relationship
     in1 + in2 === out + carry * power;
