@@ -494,22 +494,14 @@ describe('RistrettoToBytes().circom', () => {
     })
 
     for (let i = 0; i < 1; i++) {
-      // const point = DebugRistrettoPoint.BASE
       const nonDebugPoint = stringToPoint('foobar random point')
-      // const nonDebugPoint = ed.RistrettoPoint.fromHex(
-      // '26666f6f6261722072616e646f6d20706f696e74a6ba240eac788d30b2b3a47e'
-      // ) // Known buggy seed
       console.log(`== seed: ${nonDebugPoint} ==`)
 
       const point = DebugRistrettoPoint.fromHex(nonDebugPoint.toHex())
       const expected = point.toRawBytes()
 
       // Confirm our .toRawBytes() debug additions haven't screwed up the output
-      // const nonDebugPoint = ed.RistrettoPoint.BASE
       expect(nonDebugPoint.toRawBytes()).toEqual(expected.result)
-
-      // // Helper to remember multiples of 19 (clue: forgot a mod())
-      // console.log([1, 2, 3, 4, 5].map((x) => x * 19))
 
       // @ts-expect-error Overriding .ep privatization
       const ep = point.ep
@@ -517,12 +509,6 @@ describe('RistrettoToBytes().circom', () => {
         P: chunk(xyztObjToArray(ep)),
       })
       console.log()
-
-      // console.log('z > y', ep.z > ep.y)
-      // console.log('z', ep.z)
-      // console.log('y', ep.y)
-      // console.log('y.length', String(ep.y).length)
-      // console.log('z-y length', String(expected.debug.z_minus_y).length)
 
       // Check circom intermediate results against JS
       // key: num_limbs, value: signal_name[]

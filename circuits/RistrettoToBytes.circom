@@ -15,9 +15,6 @@ template RistrettoToBytes() {
     signal z[3] <== P[2];
     signal t[3] <== P[3];
 
-    // Output compressed s in bytes
-    signal output s_bytes[32];
-
     var base = 85;
 
     // Step 1: u1 = mod((z + y) * (z - y))
@@ -74,15 +71,8 @@ template RistrettoToBytes() {
     signal s[3] <== Multiplexor2(3)(isNegative_s, [s_1, neg_s]);
     // -- Confirmed above matches reference --
 
-    // Convert final s to bytes
-    component sToBytes = ChunkedToBytes(3, base);
-    for (var i = 0; i < 3; i++) {
-        sToBytes.in[i] <== s[i];
-    }
-
-    for (var i = 0; i < 32; i++) {
-        s_bytes[i] <== sToBytes.out[i];
-    }
+    // Step 11: Convert final `s`, compressed to bytes
+    signal output s_bytes[32] <== ChunkedToBytes()(s);
 }
 
 template Multiplexor2(chunks) {
@@ -110,7 +100,9 @@ template ChunkedNeg() {
     signal output out[n] <== ChunkedSubModP()(P()(), x);
 }
 
-template ChunkedToBytes(chunks, base) {
+template ChunkedToBytes() {
+    var chunks = 3;
+    var base = 85;
     signal input in[chunks];
     signal output out[32];
 
