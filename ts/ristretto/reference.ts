@@ -10,7 +10,7 @@
 // In browser the line is automatically removed during build time: uses crypto.subtle instead.
 import * as nodeCrypto from 'crypto'
 import bn128 from './bn128_constant'
-import { chunkBigInt } from '../utils'
+// import { chunkBigInt } from '../utils'
 
 // Be friendly to bad ECMAScript parsers by not using bigint literals like 123n
 const _0n = BigInt(0)
@@ -428,10 +428,7 @@ class RistrettoPoint {
     const u1_2 = mod(u1 * u1)
     const u2_2 = mod(u2 * u2)
     const v = mod(a * d * u1_2 - u2_2) // 6
-    const console_log = console.log // TODO: Temp disable console.log for less debugging noise
-    console.log = () => {} // TODO: Disables console.log
     const { isValid, value: I } = invertSqrt(mod(v * u2_2)) // 7
-    console.log = console_log // TODO: Restore console.log
     const Dx = mod(I * u2) // 8
     const Dy = mod(I * Dx * v) // 9
     let x = mod((s + s) * Dx) // 10
@@ -456,9 +453,7 @@ class RistrettoPoint {
     // Square root always exists
     const u2_sq = mod(u2 * u2)
     const u1_times_u2_sq = mod(u1 * u2_sq)
-    console.log('\n\njs invertSqrt():')
     const { value: invsqrt } = invertSqrt(u1_times_u2_sq) // 3
-    console.log()
 
     const D1 = mod(invsqrt * u1) // 4
     const D2 = mod(invsqrt * u2) // 5
