@@ -20,16 +20,21 @@ template ChunkedModP() {
     (folded[1], overflow[1]) <== ChunkedAddSingle(85)(in[1], 19 * in[4] + overflow[0]);
     (folded[2], overflow[2]) <== ChunkedAddSingle(85)(in[2], 19 * in[5] + overflow[1]);
 
-    /** 2. But we may still have 4-bits of overflow, and need to subtract p one last time: */
+    /** 2. We may still have 4-bits of overflow, and need to subtract p some more: */
     signal folded_minus_p[3];
     (folded_minus_p, _) <== ChunkedSub(3, 85)(folded, [(2 ** 85 - 19), (2 ** 85 - 1), (2 ** 85 - 1)]);
-    /** 2b. Use `folded_minus_p` if: */
-    signal needs_subtraction <== OR()(
-        overflow[2], // the biggest limb overflowed
-        ChunkedGreaterEqThanP()(folded) // or folded >= p (-19 to 0)
-    );
+    // Note: There is a subtle quirk here, that overflow[2] is not just binary 0 or 1, but up to 2^4.
+      // Mux actually multiplies its non-zero output by this.
+      // We could clamp it to 1 — via: GreaterEqThan(85)([overflow[2], 1])
+      // but this makes the answers wrong.
+    signal first_mux_out[3] <== Multiplexor2(3)(overflow[2], [folded, folded_minus_p]);
 
-    signal output out[3] <== Multiplexor2(3)(needs_subtraction, [folded, folded_minus_p]);
+    // 3. We may need to subtract `p` one last time if we're still in the range [-19 to -1]
+    signal in_overflow_range <== ChunkedGreaterEqThanP()(first_mux_out);
+    signal second_subtraction[3];
+    (second_subtraction, _) <== ChunkedSub(3, 85)(first_mux_out, [(2 ** 85 - 19), (2 ** 85 - 1), (2 ** 85 - 1)]);
+
+    signal output out[3] <== Multiplexor2(3)(in_overflow_range, [first_mux_out, second_subtraction]);
 }
 
 template ChunkedAddSingle(base) {

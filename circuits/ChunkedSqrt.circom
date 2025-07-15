@@ -44,9 +44,9 @@ template ChunkedUVRatio(chunks, base) {
     log("x_sq=");
     for (var i = 0; i < chunks; i++) log(x_sq[i]);
     signal vx2[chunks] <== ChunkedMulModP()(v, x_sq);
-    // -- Confirmed above matches reference --
     log("vx2=");
     for (var i = 0; i < chunks; i++) log(vx2[i]);
+    // -- Confirmed above matches reference --
 
     // skip root checks (like vx² == u or -u) for now to keep ZK minimal
     out <== x_1;
