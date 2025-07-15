@@ -1,20 +1,13 @@
-pragma circom 2.0.0;
+pragma circom 2.2.2;
 
 include "./lt.circom";
 
 template ChunkedMul(m, n, base){
-  signal input in1[m];
-  signal input in2[n];
-  signal pp[n][m+n-1];
-  signal sum[m+n-1];
-  signal carry[m+n];
+  signal input in1[m], in2[n];
   signal output out[m+n];
 
-  var power =  2 ** base;
-  var i;
-  var j;
-
   component lt1[m];
+  var i;
   for (i = 0; i < m; i++) {
     lt1[i] = LessThanPower(base);
     lt1[i].in <== in1[i];
@@ -28,6 +21,8 @@ template ChunkedMul(m, n, base){
     lt2[i].out === 1;
   } 
   
+  signal pp[n][m+n-1];
+  var j;
   for (i = 0; i < n; i++){
     for (j = 0; j < m+n-1; j++){
       if (j<i){
@@ -43,6 +38,7 @@ template ChunkedMul(m, n, base){
   }
 
   var vsum = 0;
+  signal sum[m+n-1];
   for (j=0; j<m+n-1; j++){
     vsum = 0;
     for (i=0; i<n; i++){
@@ -51,7 +47,9 @@ template ChunkedMul(m, n, base){
     sum[j] <== vsum;
   }
   
+  signal carry[m+n];
   carry[0] <== 0;
+  var power = 2 ** base;
   for (j = 0; j < m+n-1; j++) {
     out[j] <-- (sum[j] + carry[j]) % power;
     carry[j+1] <-- (sum[j] + carry[j]) \ power;
