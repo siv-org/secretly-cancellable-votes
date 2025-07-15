@@ -202,5 +202,8 @@ export function extendedToAffine([X, Y, Z]: XYZTPoint) {
  * @param inputs The inputs to hash
  * @returns the hash of the inputs
  */
-export const poseidon = (inputs: bigint[]): bigint =>
+export const poseidon = (inputs: bigint[]): bigint => 
   poseidonPerm([BigInt(0), ...inputs.map((x) => BigInt(x))])[0]
+
+
+export const hashLeanIMT = (a: bigint, b: bigint): bigint => poseidon([a, b]);

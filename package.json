@@ -13,7 +13,8 @@
     "test": "bun test --timeout=60_000",
     "test:watch": "npm test -- --watch",
     "watch-circuits": "nodemon --quiet --ext circom --delay 0.5 --exec 'bun ts/watch-circuits.ts'",
-    "size": "snarkjs r1cs info build/ExtractStringFromPoint.r1cs"
+    "size": "snarkjs r1cs info build/ExtractStringFromPoint.r1cs",
+    "build-tree": "bun ts/merkleTree.ts"
   },
   "keywords": [],
   "author": "",
