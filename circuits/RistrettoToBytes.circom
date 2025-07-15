@@ -38,14 +38,10 @@ template RistrettoToBytes() {
     signal u2_sq[3] <== ChunkedMulModP()(u2, u2);
     signal u1_times_u2_sq[3] <== ChunkedMulModP()(u1, u2_sq);
     signal invsqrt[3] <== ChunkedInvertSqrt(3, base)(u1_times_u2_sq);
-    // -- Confirmed above matches reference --
 
     // Step 4: D1 = invsqrt * u1
-    component mul_D1 = ChunkedMul(3, 3, base);
-    for (var i = 0; i < 3; i++) {
-        mul_D1.in1[i] <== invsqrt[i];
-        mul_D1.in2[i] <== u1[i];
-    }
+    signal D1[3] <== ChunkedMulModP()(invsqrt, u1);
+    // -- Confirmed above matches reference --
 
     // Step 5: D2 = invsqrt * u2
     component mul_D2 = ChunkedMul(3, 3, base);
@@ -57,7 +53,7 @@ template RistrettoToBytes() {
     // Step 6: zInv = D1 * D2 * t
     component mul_zInv_temp = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
-        mul_zInv_temp.in1[i] <== mul_D1.out[i];
+        mul_zInv_temp.in1[i] <== D1[i];
         mul_zInv_temp.in2[i] <== mul_D2.out[i];
     }
 
@@ -131,7 +127,7 @@ template RistrettoToBytes() {
     // Choose D based on t * zInv sign
     component mul_D1_invsqrt = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
-        mul_D1_invsqrt.in1[i] <== mul_D1.out[i];
+        mul_D1_invsqrt.in1[i] <== D1[i];
         mul_D1_invsqrt.in2[i] <== INVSQRT_A_MINUS_D[i];
     }
 

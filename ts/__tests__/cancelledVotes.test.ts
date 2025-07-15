@@ -535,6 +535,7 @@ describe('RistrettoToBytes().circom', () => {
           'u2_sq',
           'u1_times_u2_sq',
           'invsqrt',
+          'D1',
         ],
         // 6: ['u1_premod'],
       }
