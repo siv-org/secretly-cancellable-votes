@@ -12,15 +12,15 @@ template ChunkedMul(m, n, base){
     lt1[i] = LessThanPower(base);
     lt1[i].in <== in1[i];
     lt1[i].out === 1;
-  } 
+  }
 
   component lt2[n];
   for (i = 0; i < n; i++) {
     lt2[i] = LessThanPower(base);
     lt2[i].in <== in2[i];
     lt2[i].out === 1;
-  } 
-  
+  }
+
   signal pp[n][m+n-1];
   var j;
   for (i = 0; i < n; i++){
@@ -46,7 +46,7 @@ template ChunkedMul(m, n, base){
     }
     sum[j] <== vsum;
   }
-  
+
   signal carry[m+n];
   carry[0] <== 0;
   var power = 2 ** base;

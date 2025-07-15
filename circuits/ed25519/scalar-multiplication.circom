@@ -35,7 +35,7 @@ template BitElementMulAny() {
         dblIn[2][i] ==> doubler.P[2][i];
         dblIn[3][i] ==> doubler.P[3][i];
     }
-   
+
     for(i=0;i<3;i++){
         doubler.out_2P[0][i] ==> adder.P[0][i];
         doubler.out_2P[1][i] ==> adder.P[1][i];
@@ -61,7 +61,6 @@ template BitElementMulAny() {
         adder.R[2][i] ==> selector.in[1][2][i];
         adder.R[3][i] ==> selector.in[1][3][i];
     }
-    
 
     for(i=0;i<3;i++){
         doubler.out_2P[0][i] ==> dblOut[0][i];
@@ -73,7 +72,7 @@ template BitElementMulAny() {
         selector.out[1][i] ==> addOut[1][i];
         selector.out[2][i] ==> addOut[2][i];
         selector.out[3][i] ==> addOut[3][i];
-    }   
+    }
 }
 
 template ScalarMul(){
@@ -142,11 +141,11 @@ template ScalarMul(){
     }
     component lastSel = Multiplexor2();
     scalar[0] ==> lastSel.sel;
-    
+
     for(i=0;i<3;i++){
-        finaladder.R[0][i] ==> lastSel.in[0][0][i]; 
+        finaladder.R[0][i] ==> lastSel.in[0][0][i];
         finaladder.R[1][i] ==> lastSel.in[0][1][i];
-        finaladder.R[2][i] ==> lastSel.in[0][2][i]; 
+        finaladder.R[2][i] ==> lastSel.in[0][2][i];
         finaladder.R[3][i] ==> lastSel.in[0][3][i];
 
         bits[253].addOut[0][i] ==> lastSel.in[1][0][i];

@@ -20,7 +20,7 @@ template ChunkedAdd(m, n, base){
       lt1[i][j] = LessThanPower(base);
       lt1[i][j].in <== in[i][j];
       lt1[i][j].out === 1;
-    } 
+    }
   }
 
   var acc;
@@ -33,7 +33,7 @@ template ChunkedAdd(m, n, base){
 
     psum[j] <== acc;
   }
-  
+
   carry[0] <== 0;
   for (i = 0; i < m; i++){
     out[i] <-- (psum[i] + carry[i]) % power;

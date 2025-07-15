@@ -30,10 +30,10 @@ template PointAdd(){
 
         Y_1Y_2.in1[i] <== P[1][i];
         Y_1Y_2.in2[i] <== Q[1][i];
-        
+
         X_1Y_2.in1[i] <== P[0][i];
         X_1Y_2.in2[i] <== Q[1][i];
-        
+
         X_2Y_1.in1[i] <== P[1][i];
         X_2Y_1.in2[i] <== Q[0][i];
 
@@ -83,14 +83,14 @@ template PointAdd(){
     component f_add = ChunkedAdderIrregular(9,6,base);
     component g_add = ChunkedAdderIrregular(9,6,base);
     component h_add = ChunkedAdd(6,2,base);
-    
+
     for(i=0;i<6;i++){
         e_add.in[0][i] <== X_1Y_2.out[i];
         e_add.in[1][i] <== X_2Y_1.out[i];
-        f_add.b[i] <== Z_1Z_2.out[i];  
+        f_add.b[i] <== Z_1Z_2.out[i];
         g_add.b[i] <== Z_1Z_2.out[i];
         h_add.in[0][i] <== X_1X_2.out[i];
-        h_add.in[1][i] <== Y_1Y_2.out[i];  
+        h_add.in[1][i] <== Y_1Y_2.out[i];
     }
 
     for(i=0;i<9;i++){
@@ -134,12 +134,12 @@ template PointAdd(){
     for(i=0;i<14;i++){
         final_modulo4.in[i] <== final_mul4.out[i];
     }
-    
+
     for(i=0;i<3;i++){
         R[0][i] <== final_modulo1.out[i];
         R[1][i] <== final_modulo2.out[i];
         R[2][i] <== final_modulo3.out[i];
-        R[3][i] <== final_modulo4.out[i];    
+        R[3][i] <== final_modulo4.out[i];
     }
 }
 

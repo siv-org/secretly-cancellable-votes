@@ -28,10 +28,10 @@ template SecretlyCancelVote(MAX_TREE_DEPTH) {
     // Private inputs
     // chunk(RP.fromHex(encoded).ep) -> [x, y, z, t]
     // @todo: derive encoded 4x3 point from 32 bytes, or vice versa, instead of inputting both (which might be different)
-    signal input encoded_vote_to_secretly_cancel[4][3]; // Ristretto Point 
+    signal input encoded_vote_to_secretly_cancel[4][3]; // Ristretto Point
     signal input encoded_vote_to_secretly_cancel_bytes[32]; // bytes
     signal input votes_secret_randomizer[255]; // bitify(bigint)
-    
+
     signal input merkle_path_of_cancelled_vote[MAX_TREE_DEPTH]; // poseidon_hash[]
     signal input merkle_path_index; // integer
     signal input admin_secret_salt; // bigint
