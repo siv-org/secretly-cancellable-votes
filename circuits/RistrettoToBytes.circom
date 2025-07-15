@@ -44,26 +44,17 @@ template RistrettoToBytes() {
 
     // Step 5: D2 = invsqrt * u2
     signal D2[3] <== ChunkedMulModP()(invsqrt, u2);
-    // -- Confirmed above matches reference --
 
     // Step 6: zInv = D1 * D2 * t
-    component mul_zInv_temp = ChunkedMul(3, 3, base);
-    for (var i = 0; i < 3; i++) {
-        mul_zInv_temp.in1[i] <== D1[i];
-        mul_zInv_temp.in2[i] <== D2[i];
-    }
-
-    component mul_zInv = ChunkedMul(3, 3, base);
-    for (var i = 0; i < 3; i++) {
-        mul_zInv.in1[i] <== mul_zInv_temp.out[i];
-        mul_zInv.in2[i] <== t[i];
-    }
+    signal D1D2[3] <== ChunkedMulModP()(D1, D2);
+    signal zInv[3] <== ChunkedMulModP()(D1D2, t);
+    // -- Confirmed above matches reference --
 
     // Step 7: Check if t * zInv is negative
     component mul_t_zInv = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
         mul_t_zInv.in1[i] <== t[i];
-        mul_t_zInv.in2[i] <== mul_zInv.out[i];
+        mul_t_zInv.in2[i] <== zInv[i];
     }
 
     component isNegative_t_zInv = IsNegativeChunked(3, base);
@@ -92,7 +83,7 @@ template RistrettoToBytes() {
     component mul_x_zInv = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
         mul_x_zInv.in1[i] <== mux_x.out[i];
-        mul_x_zInv.in2[i] <== mul_zInv.out[i];
+        mul_x_zInv.in2[i] <== zInv[i];
     }
 
     component isNegative_x_zInv = IsNegativeChunked(3, base);
