@@ -70,7 +70,6 @@ template ChunkedMul(m, n, base){
 
 /** Assumes 3-limbs of base 85 */
 template ChunkedMulModP() {
-  signal input in1[3];
-  signal input in2[3];
+  signal input in1[3], in2[3];
   signal output out[3] <== ChunkedModP()(ChunkedMul(3, 3, 85)(in1, in2));
 }
