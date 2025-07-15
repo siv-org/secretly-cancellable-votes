@@ -33,10 +33,19 @@ template ChunkedUVRatio(chunks, base) {
     // x_1 = (u * v3) * pow
     signal uv3[chunks] <== ChunkedMulModP()(u, v3);
     signal x_1[chunks] <== ChunkedMulModP()(uv3, pow);
-
-    signal vx2[chunks] <== ChunkedMulModP()(v, ChunkedMulModP()(x_1, x_1));
-    // -- Confirmed above matches reference --
     log("circuit=");
+    // for (var i = 0; i < chunks; i++) log(x_1[i]);
+
+    // log("v=");
+    // for (var i = 0; i < chunks; i++) log(v[i]);
+
+
+    signal x_sq[chunks] <== ChunkedMulModP()(x_1, x_1);
+    log("x_sq=");
+    for (var i = 0; i < chunks; i++) log(x_sq[i]);
+    signal vx2[chunks] <== ChunkedMulModP()(v, x_sq);
+    // -- Confirmed above matches reference --
+    log("vx2=");
     for (var i = 0; i < chunks; i++) log(vx2[i]);
 
     // skip root checks (like vx² == u or -u) for now to keep ZK minimal

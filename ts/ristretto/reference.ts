@@ -930,7 +930,15 @@ function uvRatio(u: bigint, v: bigint): { isValid: boolean, value: bigint } {
   const uv7 = u * v7
   const pow = pow_2_252_3(uv7).pow_p_5_8;
   let x = mod(u * v3 * pow);                  // (uv³)(uv⁷)^(p-5)/8
-  const vx2 = mod(v * x * x);                 // vx²
+  // console.log(chunkBigInt(x).join('\n'))
+  // console.log('v=')
+  // console.log(chunkBigInt(v).join('\n'))
+  const x_sq = mod(x * x) // vx²
+  console.log('x_sq=')
+  console.log(chunkBigInt(x_sq).join('\n'))
+
+  const vx2 = mod(v * x_sq)                 // vx²
+  console.log('vx2=')
   console.log(chunkBigInt(vx2).join('\n'))
   const root1 = x;                            // First root candidate
   const root2 = mod(x * SQRT_M1);             // Second root candidate
