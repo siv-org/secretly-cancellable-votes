@@ -28,24 +28,21 @@ template ChunkedUVRatio(chunks, base) {
     signal pow[chunks] <== ChunkedPow2_252_3()(uv7);
 
     // Reference reassigns x, but circom doesn't allow that,
-    // so we'll call them x_1,2,3, then mux() between.
+    // so we'll call them x_1,2,3, and mux() between.
 
     // x_1 = (u * v3) * pow
     signal uv3[chunks] <== ChunkedMulModP()(u, v3);
     signal x_1[chunks] <== ChunkedMulModP()(uv3, pow);
-    log("circuit=");
-    // for (var i = 0; i < chunks; i++) log(x_1[i]);
-
-    // log("v=");
-    // for (var i = 0; i < chunks; i++) log(v[i]);
-
-
     signal x_sq[chunks] <== ChunkedMulModP()(x_1, x_1);
-    log("x_sq=");
-    for (var i = 0; i < chunks; i++) log(x_sq[i]);
     signal vx2[chunks] <== ChunkedMulModP()(v, x_sq);
-    log("vx2=");
-    for (var i = 0; i < chunks; i++) log(vx2[i]);
+
+    signal root1[chunks] <== x_1;
+    // √(-1) aka √(a) aka 2^((p-1)/4)
+    var SQRT_M1[3] = [ 19212814651911893326667952, 5789323763396775551972713, 13150778395323338825847616 ];
+    signal root2[chunks] <== ChunkedMulModP()(x_1, SQRT_M1);
+    log("circuit=");
+    log("root2=");
+    for (var i = 0; i < chunks; i++) log(root2[i]);
     // -- Confirmed above matches reference --
 
     // skip root checks (like vx² == u or -u) for now to keep ZK minimal
