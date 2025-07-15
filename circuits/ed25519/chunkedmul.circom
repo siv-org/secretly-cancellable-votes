@@ -6,22 +6,21 @@ template ChunkedMul(m, n, base){
   signal input in1[m], in2[n];
   signal output out[m+n];
 
-  var i, j;
 
   // Confirm all input limbs are less than 2^base
   AssertAllChunksAreLessThanPower(base, m)(in1);
   AssertAllChunksAreLessThanPower(base, n)(in2);
 
-  signal pp[n][m+n-1];
-  for (i = 0; i < n; i++){
-    for (j = 0; j < m+n-1; j++){
-      if (j<i){
+  var i, j;
+  // Compute partial products (bit-level cross multiplications)
+  signal pp[n][m + n - 1];
+  for (i = 0; i < n; i++) {
+    for (j = 0; j < m + n - 1; j++) {
+      if (j < i) {
         pp[i][j] <== 0;
-      }
-      else if (j>=i && j<=m-1+i){
-        pp[i][j] <== in1[j-i] * in2[i];
-      }
-      else {
+      } else if (j >= i && j <= m - 1 + i) {
+        pp[i][j] <== in1[j - i] * in2[i];
+      } else {
         pp[i][j] <== 0;
       }
     }
