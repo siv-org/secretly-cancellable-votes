@@ -29,7 +29,7 @@ template ChunkedSubModP() {
     signal with_p[4] <== ChunkedAdd(3, 2, 85)([diff, p]);
 
     // 3. Select between orig diff & with_p
-    signal output out[3] <== Multiplexor2(3)(underflow, [diff, [with_p[0], with_p[1], with_p[2]]]);
+    signal output out[3] <== ChunkedMultiplexor2(3)(underflow, [diff, [with_p[0], with_p[1], with_p[2]]]);
     // `with_p` has an extra 4th limb, but we ignore it,
     // because the underflow implies it's empty.
 }

@@ -27,14 +27,14 @@ template ChunkedModP() {
       // Mux actually multiplies its non-zero output by this.
       // We could clamp it to 1 — via: GreaterEqThan(85)([overflow[2], 1])
       // but this makes the answers wrong.
-    signal first_mux_out[3] <== Multiplexor2(3)(overflow[2], [folded, folded_minus_p]);
+    signal first_mux_out[3] <== ChunkedMultiplexor2(3)(overflow[2], [folded, folded_minus_p]);
 
     // 3. We may need to subtract `p` one last time if we're still in the range [-19 to -1]
     signal in_overflow_range <== ChunkedGreaterEqThanP()(first_mux_out);
     signal second_subtraction[3];
     (second_subtraction, _) <== ChunkedSub(3, 85)(first_mux_out, [(2 ** 85 - 19), (2 ** 85 - 1), (2 ** 85 - 1)]);
 
-    signal output out[3] <== Multiplexor2(3)(in_overflow_range, [first_mux_out, second_subtraction]);
+    signal output out[3] <== ChunkedMultiplexor2(3)(in_overflow_range, [first_mux_out, second_subtraction]);
 }
 
 template AddSingleChunk(base) {

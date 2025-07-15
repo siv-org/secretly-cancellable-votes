@@ -49,11 +49,11 @@ template ChunkedUVRatio(chunks, base) {
 
     signal noRoot <== ChunkedIsEqual(chunks)(vx2, ChunkedMulModP()(neg_u, SQRT_M1()())); // Reference includes for const-time safety.
 
-    signal x_2[chunks] <== Multiplexor2(chunks)(OR()(useRoot2, noRoot), [x_1, root2]);
+    signal x_2[chunks] <== ChunkedMultiplexor2(chunks)(OR()(useRoot2, noRoot), [x_1, root2]);
 
     signal x_is_negative <== ChunkedEdIsNegative()(x_2);
     signal neg_x_2[chunks] <== ChunkedNeg()(x_2);
-    signal x_3[chunks] <== Multiplexor2(chunks)(x_is_negative, [x_2, neg_x_2]);
+    signal x_3[chunks] <== ChunkedMultiplexor2(chunks)(x_is_negative, [x_2, neg_x_2]);
 
     signal output out[chunks] <== x_3;
     signal output isValid <== OR()(useRoot1, useRoot2);

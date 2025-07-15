@@ -7,6 +7,7 @@ include "MerkleRoot.circom";
 include "poseidon.circom";
 include "HashAdminSalt.circom";
 include "HashPoint.circom";
+include "RistrettoToBytes.circom";
 
 /**
 Verification #: 4470-7655-8313
@@ -26,10 +27,7 @@ template SecretlyCancelVote(MAX_TREE_DEPTH) {
     signal input actual_tree_depth;
 
     // Private inputs
-    // chunk(RP.fromHex(encoded).ep) -> [x, y, z, t]
-    // @todo: derive encoded 4x3 point from 32 bytes, or vice versa, instead of inputting both (which might be different)
     signal input encoded_vote_to_secretly_cancel[4][3]; // Ristretto Point
-    signal input encoded_vote_to_secretly_cancel_bytes[32]; // bytes
     signal input votes_secret_randomizer[255]; // bitify(bigint)
 
     signal input merkle_path_of_cancelled_vote[MAX_TREE_DEPTH]; // poseidon_hash[]
@@ -51,7 +49,7 @@ template SecretlyCancelVote(MAX_TREE_DEPTH) {
     // 2) Prove the cancelled vote content
     var MAX_VOTE_CONTENT_LENGTH = 32 - 1 - 15; // 32 - length_byte - 15_bytes_for_verification_number
     signal output vote_selection_to_cancel[MAX_VOTE_CONTENT_LENGTH]; // integer[], eg. 'abca' -> [97, 98, 99, 97]
-    vote_selection_to_cancel <== ExtractSelectionFromVote()(encoded_vote_to_secretly_cancel_bytes);
+    vote_selection_to_cancel <== ExtractSelectionFromVote()(RistrettoToBytes()(encoded_vote_to_secretly_cancel));
 
     // 3) Prove the cancelled vote is unique
     var hashed_encoded_vote_to_secretly_cancel = HashPoint()(encoded_vote_to_secretly_cancel);

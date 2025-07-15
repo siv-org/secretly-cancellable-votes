@@ -50,7 +50,6 @@ describe.todo('SecretlyCancelVote', () => {
 
     const sampleVote = '4470-7655-8313:Pistacchio'
     const encoded = stringToPoint(sampleVote)
-    const rawBytes = [...encoded.toRawBytes()]
 
     const electionPubKeyHex =
       'e4742ff6ae59f741b757d1b1df0d0b0eeb3dd6618f42aed0f97cddcd480f186e'
@@ -70,7 +69,6 @@ describe.todo('SecretlyCancelVote', () => {
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
       ],
       admin_secret_salt,
-      encoded_vote_to_secretly_cancel_bytes: rawBytes,
       // @ts-expect-error Overriding .ep privatization
       encoded_vote_to_secretly_cancel: chunk(encoded.ep),
       votes_secret_randomizer:

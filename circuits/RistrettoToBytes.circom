@@ -50,17 +50,17 @@ template RistrettoToBytes() {
     signal y_sqrt_m1[3] <== ChunkedMulModP()(y, SQRT_M1()());
     signal x_sqrt_m1[3] <== ChunkedMulModP()(x, SQRT_M1()());
 
-    signal mux_x[3] <== Multiplexor2(3)(isNegative_t_zInv, [x, y_sqrt_m1]);
-    signal mux_y[3] <== Multiplexor2(3)(isNegative_t_zInv, [y, x_sqrt_m1]);
+    signal mux_x[3] <== ChunkedMultiplexor2(3)(isNegative_t_zInv, [x, y_sqrt_m1]);
+    signal mux_y[3] <== ChunkedMultiplexor2(3)(isNegative_t_zInv, [y, x_sqrt_m1]);
 
     signal D1_INVSQRT_A_MINUS_D[3] <== ChunkedMulModP()(D1, INVSQRT_A_MINUS_D()());
-    signal D[3] <== Multiplexor2(3)(isNegative_t_zInv, [D2, D1_INVSQRT_A_MINUS_D]);
+    signal D[3] <== ChunkedMultiplexor2(3)(isNegative_t_zInv, [D2, D1_INVSQRT_A_MINUS_D]);
 
     // Step 9: Check if x * zInv is negative
     signal x_zInv[3] <== ChunkedMulModP()(mux_x, zInv);
     signal isNegative_x_zInv <== ChunkedEdIsNegative()(x_zInv);
     signal neg_y[3] <== ChunkedNeg()(mux_y);
-    signal mux_y2[3] <== Multiplexor2(3)(isNegative_x_zInv, [mux_y, neg_y]);
+    signal mux_y2[3] <== ChunkedMultiplexor2(3)(isNegative_x_zInv, [mux_y, neg_y]);
 
     // Step 10: Compute s = (z - y) * D
     signal z_minus_mux_y2[3] <== ChunkedSubModP()(z, mux_y2);
@@ -68,14 +68,14 @@ template RistrettoToBytes() {
     // Ensure s is positive (if negative, negate it)
     signal neg_s[3] <== ChunkedNeg()(s_1);
     signal isNegative_s <== ChunkedEdIsNegative()(s_1);
-    signal s[3] <== Multiplexor2(3)(isNegative_s, [s_1, neg_s]);
+    signal s[3] <== ChunkedMultiplexor2(3)(isNegative_s, [s_1, neg_s]);
     // -- Confirmed above matches reference --
 
     // Step 11: Convert final `s`, compressed to bytes
     signal output s_bytes[32] <== ChunkedToBytes()(s);
 }
 
-template Multiplexor2(chunks) {
+template ChunkedMultiplexor2(chunks) {
     signal input sel;
     signal input in[2][chunks];
     signal output out[chunks];
