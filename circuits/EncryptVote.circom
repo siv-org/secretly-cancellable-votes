@@ -12,7 +12,6 @@ template EncryptVote() {
     // component enforcePrimeOrder = EnforcePrimeOrder()
     // enforcePrimeOrder.P <== encoded_vote_to_secretly_cancel
 
-
     // We recalculate the encrypted ciphertext using the Elliptic Curve ElGamal algorithm:
     // Encrypted = Encoded + (Recipient * randomizer)
 

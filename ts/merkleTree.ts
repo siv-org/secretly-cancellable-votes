@@ -141,4 +141,5 @@ export const genMerkleTree = async (endpoint: string): Promise<void> => {
 // Example endpoint 
 const endpoint = 'https://siv.org/api/election/1752095348369/accepted-votes'
 
-genMerkleTree(endpoint).catch(console.error)
+// run it 
+// genMerkleTree(endpoint).catch(console.error)

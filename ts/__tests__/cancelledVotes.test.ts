@@ -21,6 +21,8 @@ import { pointToString, stringToPoint } from '../curve.ts'
 import { shouldRecompile } from '../watch-circuits.ts'
 import { hashEncryptedVote } from '../merkleTree.ts'
 
+const TREE_DEPTH = 16
+
 describe('Basic multiplier (example)', () => {
   it('should multiply two numbers', async () => {
     const circuit: WitnessTester<['a', 'b'], ['c']> =
@@ -38,13 +40,13 @@ describe('Basic multiplier (example)', () => {
   })
 })
 
-describe.todo('SecretlyCancelVote', () => {
+describe('SecretlyCancelVote', () => {
   it('should cancel a vote', async () => {
     const circuit = await circomkit.WitnessTester('SecretlyCancelVote', {
       file: './_SecretlyCancelVote',
       template: 'SecretlyCancelVote',
       recompile: shouldRecompile('_SecretlyCancelVote.circom'),
-      params: [16],
+      params: [TREE_DEPTH],
       pubs: [
         'root_hash_of_all_encrypted_votes',
         'election_public_key',
@@ -52,8 +54,14 @@ describe.todo('SecretlyCancelVote', () => {
       ],
     })
 
-    const sampleVote = '4470-7655-8313:Pistacchio'
-    const encoded = stringToPoint(sampleVote)
+    // votes in the election 
+    const sampleVotes = ['4470-7655-8313:Pistacchio', '4470-7654-8313:Pistacchio', '4470-7655-8311:Pistacchio', '4470-7655-8310:Pistacchio']
+    const sampleRandomizers = [123456789n, 223456789n, 323456789n, 423456789n]
+
+    const indexOfLeafToCancel = 0
+    const voteToCancel = sampleVotes[indexOfLeafToCancel]
+
+    const encodedVotes = sampleVotes.map(vote => stringToPoint(vote))
 
     const electionPubKeyHex =
       'e4742ff6ae59f741b757d1b1df0d0b0eeb3dd6618f42aed0f97cddcd480f186e'
@@ -64,22 +72,55 @@ describe.todo('SecretlyCancelVote', () => {
     const admin_secret_salt = 123456789n
     const hashOfAdminSecretSalt = poseidon([admin_secret_salt])
 
-    const inputs = {
-      root_hash_of_all_encrypted_votes: 1234n,
-      election_public_key: chunkedElectionPubKey,
-      actual_tree_depth: 16,
-      merkle_path_index: 0,
-      merkle_path_of_cancelled_vote: [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-      ],
-      admin_secret_salt,
-      // @ts-expect-error Overriding .ep privatization
-      encoded_vote_to_secretly_cancel: chunk(encoded.ep),
-      votes_secret_randomizer:
-        bigintTo255Bits(
-          1824575995961533715804695610269531409259964862024837291270780613852485667720n
-        ),
+    const encryptedVotes = encodedVotes.map((vote, index) => vote.add(electionPubKey.multiply(sampleRandomizers[index])))
+
+    const encryptedVoteToCancel = encryptedVotes[indexOfLeafToCancel]
+
+    console.log('encryptedVoteToCancel', encryptedVoteToCancel.toHex())
+
+    const merkleTree = new LeanIMT(
+      hashLeanIMT as unknown as LeanIMTHashFunction,
+      encryptedVotes.map(vote => hashEncryptedVote(vote.toHex()))
+    );
+
+    const proof = merkleTree.generateProof(indexOfLeafToCancel)
+    const { root, index } = proof 
+
+    const siblingsLength = proof.siblings.length
+    for (let i = 0; i < TREE_DEPTH; i += 1) {  
+      if (i >= siblingsLength) {
+        proof.siblings[i] = 0n;
+      }
     }
+
+    /**
+      // Public inputs
+      signal input root_hash_of_all_encrypted_votes; // poseidon_hash
+      signal input election_public_key[4][3]; // RistrettoPoint.toBytes()
+      signal input actual_tree_depth;
+
+      // Private inputs
+      signal input encoded_vote_to_secretly_cancel[4][3]; // Ristretto Point
+      signal input votes_secret_randomizer[255]; // bitify(bigint)
+
+      signal input merkle_path_of_cancelled_vote[MAX_TREE_DEPTH]; // poseidon_hash[]
+      signal input merkle_path_index; // integer
+      signal input admin_secret_salt; // bigint
+     */
+
+    const inputs = {
+      root_hash_of_all_encrypted_votes: root,
+      election_public_key: chunkedElectionPubKey,
+      actual_tree_depth: merkleTree.depth,
+      // @ts-expect-error Overriding .ep privatization
+      encoded_vote_to_secretly_cancel: chunk(xyztObjToArray(encodedVotes[indexOfLeafToCancel].ep)),
+      votes_secret_randomizer: bigintTo255Bits(sampleRandomizers[indexOfLeafToCancel]),
+      merkle_path_of_cancelled_vote: proof.siblings,
+      merkle_path_index: index,
+      admin_secret_salt,
+    }
+
+    console.log(inputs)
 
     const witness = await circuit.calculateWitness(inputs)
     const saltedHashOfVoteToCancel = await getSignal(
@@ -87,7 +128,9 @@ describe.todo('SecretlyCancelVote', () => {
       witness,
       'salted_hash_of_vote_to_cancel'
     )
-    console.log({ saltedHashOfVoteToCancel })
+
+    const saltedHashOfVoteToCancelInJs = poseidon([admin_secret_salt, hashEncryptedVote(encryptedVoteToCancel.toHex())])
+    expect(saltedHashOfVoteToCancel).toBe(saltedHashOfVoteToCancelInJs)
 
     const hashOfAdminSecretSaltCircuit = await getSignal(
       circuit,
@@ -104,7 +147,7 @@ describe.todo('SecretlyCancelVote', () => {
     const voteSelectionToCancelCircuit = new TextDecoder().decode(
       Uint8Array.from(voteSelectionToCancel)
     )
-    expect(voteSelectionToCancelCircuit).toBe(sampleVote.slice(15))
+    expect(voteSelectionToCancelCircuit).toBe(voteToCancel.slice(15))
   })
 })
 
@@ -142,7 +185,7 @@ describe('Ed25519 circuits', () => {
     })
   })
 
-  describe.skip('Scalar multiplication', () => {
+describe.skip('Scalar multiplication', () => {
     it('should multiply a point by a scalar', async () => {
       const circuit: WitnessTester<['P', 'scalar'], ['sP']> =
         await circomkit.WitnessTester('ScalarMul', {
@@ -211,8 +254,8 @@ describe('EnforcePrimeOrder()', () => {
   })
 })
 
-describe('EncryptVote()', () => {
-  it.skip('should get same results encrypting from JS or circuit', async () => {
+describe.skip('EncryptVote()', () => {
+  it('should get same results encrypting from JS or circuit', async () => {
     // Create example vote
     const election_public_key = ed.RistrettoPoint.BASE
     const plaintext = '4444-4444-4444:arnold'
@@ -251,7 +294,7 @@ describe('EncryptVote()', () => {
     const witness = await circuit.calculateWitness({
       election_public_key: chunkedElectionPublicKey,
       encoded_vote_to_secretly_cancel: chunkedEncoded,
-      votes_secret_randomizer: bigintTo255Bits(votes_secret_randomizer),
+      votes_secret_randomizer,
     })
 
     // Pull out the encrypted vote, from circuit's output
@@ -301,7 +344,6 @@ describe('MembershipProof()', () => {
 
   it('returns true if items are present in the tree', async () => {
       // Init circuit
-      const TREE_DEPTH = 16
       const circuit = await circomkit.WitnessTester('MembershipProof', {
         file: './MembershipProof',
         template: 'MembershipProof',
@@ -361,7 +403,7 @@ describe('MembershipProof()', () => {
         merkle_path_of_cancelled_vote: siblings,
         root_hash_of_all_encrypted_votes: root,
       })
-    })
+  })
 
 })
 
