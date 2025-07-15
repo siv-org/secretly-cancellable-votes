@@ -110,22 +110,20 @@ template ChunkedToBytes() {
 
     assert(totalbits == 255); // sanity check
 
-    component bits = Num2Bits(255);
-
     // Flatten
     signal acc[chunks + 1];
     acc[0] <== 0;
     for (var i = 0; i < chunks; i++) {
         acc[i+1] <== acc[i] + in[i] * (1 << (i * base));
     }
-    bits.in <== acc[chunks];
+    signal bits[255] <== Num2Bits(255)(acc[chunks]);
 
     // Pack first 31 full bytes
     signal byte_acc[32][9];
     for (var j = 0; j < 31; j++) {
         byte_acc[j][0] <== 0;
         for (var k = 0; k < 8; k++) {
-            byte_acc[j][k+1] <== byte_acc[j][k] + bits.out[j*8 + k] * (1 << k);
+            byte_acc[j][k+1] <== byte_acc[j][k] + bits[j*8 + k] * (1 << k);
         }
         out[j] <== byte_acc[j][8];
     }
@@ -133,7 +131,7 @@ template ChunkedToBytes() {
     // Last byte only has 7 bits
     byte_acc[31][0] <== 0;
     for (var k = 0; k < 7; k++) {
-        byte_acc[31][k+1] <== byte_acc[31][k] + bits.out[31*8 + k] * (1 << k);
+        byte_acc[31][k+1] <== byte_acc[31][k] + bits[31*8 + k] * (1 << k);
     }
     out[31] <== byte_acc[31][7];
 }

@@ -514,17 +514,17 @@ describe('RistrettoToBytes().circom', () => {
       // key: num_limbs, value: signal_name[]
       const vars_to_check = {
         3: [
-          'z_plus_y',
-          'z_minus_y',
-          'u1',
-          'u2',
-          'u2_sq',
-          'u1_times_u2_sq',
-          'invsqrt',
-          'D1',
-          'D2',
-          'zInv',
-          'D',
+          // 'z_plus_y',
+          // 'z_minus_y',
+          // 'u1',
+          // 'u2',
+          // 'u2_sq',
+          // 'u1_times_u2_sq',
+          // 'invsqrt',
+          // 'D1',
+          // 'D2',
+          // 'zInv',
+          // 'D',
           's',
         ],
         // 6: ['u1_premod'],
@@ -542,7 +542,6 @@ describe('RistrettoToBytes().circom', () => {
             0n
           )
 
-          // if (signal === 'u1') console.log(cc_dechunked - expected.debug[signal])
           expect(
             cc_dechunked,
             signal +
@@ -553,17 +552,20 @@ describe('RistrettoToBytes().circom', () => {
         }
       }
 
-      // const circuit_result = await getVectorSignal(
-      //   circuit,
-      //   witness,
-      //   's_bytes',
-      //   32
-      // )
-      // void circuit_result
-      // void expected
+      const circuit_result = await getVectorSignal(
+        circuit,
+        witness,
+        's_bytes',
+        32
+      )
       // console.log({ circuit_result })
       // console.log({ js_result: expected.result })
-      // expect(circuit_result).toEqual(expected.result.map(BigInt))
+
+      type Vector32 = bigint[] & { __length: 32 }
+      const js_result = [...expected.result].map(BigInt) as Vector32
+
+      expect(circuit_result).toEqual(js_result)
+      expect(circuit_result.length).toBe(32)
     }
   })
 })
