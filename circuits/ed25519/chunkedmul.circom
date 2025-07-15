@@ -8,18 +8,9 @@ template ChunkedMul(m, n, base){
 
   var i, j;
 
-  // Verify all in1 limbs are less than 2^base
-  signal lt1[m];
-  for (i = 0; i < m; i++) {
-    lt1[i] <== LessThanPower(base)(in1[i]);
-    lt1[i] === 1;
-  }
-  // Verify all in2 limbs are less than 2^base
-  signal lt2[n];
-  for (j = 0; j < n; j++) {
-    lt2[j] <== LessThanPower(base)(in2[j]);
-    lt2[j] === 1;
-  }
+  // Confirm all input limbs are less than 2^base
+  AssertAllChunksAreLessThanPower(base, m)(in1);
+  AssertAllChunksAreLessThanPower(base, n)(in2);
 
   signal pp[n][m+n-1];
   for (i = 0; i < n; i++){
@@ -62,6 +53,16 @@ template ChunkedMul(m, n, base){
     lt[i] = LessThanPower(base);
     lt[i].in <== out[i];
     out[i] * lt[i].out === out[i];
+  }
+}
+
+// Confirm all input limbs are less than 2^base
+template AssertAllChunksAreLessThanPower(base, chunks) {
+  signal input in[chunks];
+  signal lt[chunks];
+  for (var i = 0; i < chunks; i++) {
+    lt[i] <== LessThanPower(base)(in[i]);
+    lt[i] === 1;
   }
 }
 
