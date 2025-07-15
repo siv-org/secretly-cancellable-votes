@@ -496,6 +496,7 @@ describe('RistrettoToBytes().circom', () => {
     // for (let i = 0; i < 100; i++) {
     // const point = DebugRistrettoPoint.BASE
     const nonDebugPoint = stringToPoint('foobar random point')
+    console.log(`== seed: ${nonDebugPoint} ==`)
 
     const point = DebugRistrettoPoint.fromHex(nonDebugPoint.toHex())
     const expected = point.toRawBytes()
