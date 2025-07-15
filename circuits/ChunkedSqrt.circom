@@ -38,26 +38,26 @@ template ChunkedUVRatio(chunks, base) {
     signal x_sq[chunks] <== ChunkedMulModP()(x_1, x_1);
     signal vx2[chunks] <== ChunkedMulModP()(v, x_sq);
 
-    signal root1[chunks] <== x_1;
+    // Skip useRoot1 Mux, because we already assigned x_1 <== x
+    // signal root1[chunks] <== x_1; // Unused.
+    // signal useRoot1 <== ChunkedIsEqual(chunks)(vx2, u); // Unused.
+
     // √(-1) aka √(a) aka 2^((p-1)/4)
     var SQRT_M1[3] = [ 19212814651911893326667952, 5789323763396775551972713, 13150778395323338825847616 ];
     signal root2[chunks] <== ChunkedMulModP()(x_1, SQRT_M1);
-    log("circuit=");
-    // log("root2=");
-    // for (var i = 0; i < chunks; i++) log(root2[i]);
-    signal useRoot1 <== ChunkedIsEqual(chunks)(vx2, u);
 
     signal neg_u[chunks] <== ChunkedSubModP()(P()(), u);
     signal useRoot2 <== ChunkedIsEqual(chunks)(vx2, neg_u);
 
     signal noRoot <== ChunkedIsEqual(chunks)(vx2, ChunkedMulModP()(neg_u, SQRT_M1));
-    // log("useRoot1=", useRoot1);
-    // log("useRoot2=", useRoot2);
-    // log("noRoot=", noRoot);
+
+    signal x_2[chunks] <== Multiplexor2(chunks)(useRoot2, [x_1, root2]);
+    log("circuit=");
+    log("x_2=");
+    for (var i = 0; i < chunks; i++) log(x_2[i]);
     // -- Confirmed above matches reference --
 
-    // skip root checks (like vx² == u or -u) for now to keep ZK minimal
-    out <== x_1;
+    out <== x_2;
 }
 
 // Efficiently computes a^{(p-5)/8} aka x^(2^252-3).

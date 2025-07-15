@@ -939,12 +939,12 @@ function uvRatio(u: bigint, v: bigint): { isValid: boolean, value: bigint } {
   const root2 = mod(x * SQRT_M1);             // Second root candidate
   const useRoot1 = vx2 === u;                 // If vx² = u (mod p), x is a square root
   const neg_u = mod(-u);
-  console.log('neg_u=')
-  console.log(chunkBigInt(neg_u).join('\n'))
   const useRoot2 = vx2 === neg_u;           // If vx² = -u, set x <-- x * 2^((p-1)/4)
   const noRoot = vx2 === mod(neg_u * SQRT_M1);   // There is no valid root, vx² = -u√(-1)
   if (useRoot1) x = root1;
   if (useRoot2 || noRoot) x = root2;          // We return root2 anyway, for const-time
+  console.log('x_2=')
+  console.log(chunkBigInt(x).join('\n'))
   if (edIsNegative(x)) x = mod(-x);
   return { isValid: useRoot1 || useRoot2, value: x };
 }
