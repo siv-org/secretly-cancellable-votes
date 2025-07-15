@@ -262,6 +262,10 @@ template ChunkedToBytes(chunks, base) {
     out[31] <== byte_acc[31][7];
 }
 
+template P() {
+    signal output out[3] <== [(2 ** 85 - 19), (2 ** 85 - 1), (2 ** 85 - 1)];
+}
+
 // npx snarkjs r1cs info build/RistrettoToBytes.r1cs
 // [INFO]  snarkJS: Curve: bn-128
 // [INFO]  snarkJS: # of Wires: 53462

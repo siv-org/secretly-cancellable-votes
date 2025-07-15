@@ -45,8 +45,16 @@ template ChunkedUVRatio(chunks, base) {
     log("circuit=");
     // log("root2=");
     // for (var i = 0; i < chunks; i++) log(root2[i]);
-    // -- Confirmed above matches reference --
     signal useRoot1 <== ChunkedIsEqual(chunks)(vx2, u);
+
+    signal neg_u[chunks] <== ChunkedSubModP()(P()(), u);
+    signal useRoot2 <== ChunkedIsEqual(chunks)(vx2, neg_u);
+
+    signal noRoot <== ChunkedIsEqual(chunks)(vx2, ChunkedMulModP()(neg_u, SQRT_M1));
+    // log("useRoot1=", useRoot1);
+    // log("useRoot2=", useRoot2);
+    // log("noRoot=", noRoot);
+    // -- Confirmed above matches reference --
 
     // skip root checks (like vx² == u or -u) for now to keep ZK minimal
     out <== x_1;

@@ -22,7 +22,7 @@ template ChunkedModP() {
 
     /** 2. We may still have 4-bits of overflow, and need to subtract p some more: */
     signal folded_minus_p[3];
-    (folded_minus_p, _) <== ChunkedSub(3, 85)(folded, [(2 ** 85 - 19), (2 ** 85 - 1), (2 ** 85 - 1)]);
+    (folded_minus_p, _) <== ChunkedSub(3, 85)(folded, P()());
     // Note: There is a subtle quirk here, that overflow[2] is not just binary 0 or 1, but up to 2^4.
       // Mux actually multiplies its non-zero output by this.
       // We could clamp it to 1 — via: GreaterEqThan(85)([overflow[2], 1])
