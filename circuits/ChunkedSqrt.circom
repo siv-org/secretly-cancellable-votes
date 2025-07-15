@@ -42,14 +42,12 @@ template ChunkedUVRatio(chunks, base) {
     // signal root1[chunks] <== x_1; // Unused.
     signal useRoot1 <== ChunkedIsEqual(chunks)(vx2, u);
 
-    // √(-1) aka √(a) aka 2^((p-1)/4)
-    var SQRT_M1[3] = [ 19212814651911893326667952, 5789323763396775551972713, 13150778395323338825847616 ];
-    signal root2[chunks] <== ChunkedMulModP()(x_1, SQRT_M1);
+    signal root2[chunks] <== ChunkedMulModP()(x_1, SQRT_M1()());
 
     signal neg_u[chunks] <== ChunkedSubModP()(P()(), u);
     signal useRoot2 <== ChunkedIsEqual(chunks)(vx2, neg_u);
 
-    signal noRoot <== ChunkedIsEqual(chunks)(vx2, ChunkedMulModP()(neg_u, SQRT_M1)); // Reference includes for const-time safety.
+    signal noRoot <== ChunkedIsEqual(chunks)(vx2, ChunkedMulModP()(neg_u, SQRT_M1()())); // Reference includes for const-time safety.
 
     signal x_2[chunks] <== Multiplexor2(chunks)(OR()(useRoot2, noRoot), [x_1, root2]);
 
