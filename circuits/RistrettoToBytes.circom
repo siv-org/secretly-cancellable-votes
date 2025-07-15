@@ -269,9 +269,9 @@ template P() {
 
 // npx snarkjs r1cs info build/RistrettoToBytes.r1cs
 // [INFO]  snarkJS: Curve: bn-128
-// [INFO]  snarkJS: # of Wires: 53462
-// [INFO]  snarkJS: # of Constraints: 53730
+// [INFO]  snarkJS: # of Wires: 54058
+// [INFO]  snarkJS: # of Constraints: 54331
 // [INFO]  snarkJS: # of Private Inputs: 12
 // [INFO]  snarkJS: # of Public Inputs: 0
-// [INFO]  snarkJS: # of Labels: 103721
+// [INFO]  snarkJS: # of Labels: 109342
 // [INFO]  snarkJS: # of Outputs: 32
