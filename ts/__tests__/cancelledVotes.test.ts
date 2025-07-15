@@ -493,84 +493,86 @@ describe('RistrettoToBytes().circom', () => {
         shouldRecompile('ChunkedModP.circom'),
     })
 
-    // for (let i = 0; i < 100; i++) {
-    // const point = DebugRistrettoPoint.BASE
-    const nonDebugPoint = stringToPoint('foobar random point')
-    // const nonDebugPoint = ed.RistrettoPoint.fromHex(
-    // '26666f6f6261722072616e646f6d20706f696e74a6ba240eac788d30b2b3a47e'
-    // ) // Known buggy seed
-    console.log(`== seed: ${nonDebugPoint} ==`)
+    for (let i = 0; i < 1; i++) {
+      // const point = DebugRistrettoPoint.BASE
+      const nonDebugPoint = stringToPoint('foobar random point')
+      // const nonDebugPoint = ed.RistrettoPoint.fromHex(
+      // '26666f6f6261722072616e646f6d20706f696e74a6ba240eac788d30b2b3a47e'
+      // ) // Known buggy seed
+      console.log(`== seed: ${nonDebugPoint} ==`)
 
-    const point = DebugRistrettoPoint.fromHex(nonDebugPoint.toHex())
-    const expected = point.toRawBytes()
+      const point = DebugRistrettoPoint.fromHex(nonDebugPoint.toHex())
+      const expected = point.toRawBytes()
 
-    // Confirm our .toRawBytes() debug additions haven't screwed up the output
-    // const nonDebugPoint = ed.RistrettoPoint.BASE
-    expect(nonDebugPoint.toRawBytes()).toEqual(expected.result)
+      // Confirm our .toRawBytes() debug additions haven't screwed up the output
+      // const nonDebugPoint = ed.RistrettoPoint.BASE
+      expect(nonDebugPoint.toRawBytes()).toEqual(expected.result)
 
-    // // Helper to remember multiples of 19 (clue: forgot a mod())
-    // console.log([1, 2, 3, 4, 5].map((x) => x * 19))
+      // // Helper to remember multiples of 19 (clue: forgot a mod())
+      // console.log([1, 2, 3, 4, 5].map((x) => x * 19))
 
-    // @ts-expect-error Overriding .ep privatization
-    const ep = point.ep
-    const witness = await circuit.calculateWitness({
-      P: chunk(xyztObjToArray(ep)),
-    })
-    console.log()
+      // @ts-expect-error Overriding .ep privatization
+      const ep = point.ep
+      const witness = await circuit.calculateWitness({
+        P: chunk(xyztObjToArray(ep)),
+      })
+      console.log()
 
-    // console.log('z > y', ep.z > ep.y)
-    // console.log('z', ep.z)
-    // console.log('y', ep.y)
-    // console.log('y.length', String(ep.y).length)
-    // console.log('z-y length', String(expected.debug.z_minus_y).length)
+      // console.log('z > y', ep.z > ep.y)
+      // console.log('z', ep.z)
+      // console.log('y', ep.y)
+      // console.log('y.length', String(ep.y).length)
+      // console.log('z-y length', String(expected.debug.z_minus_y).length)
 
-    // Check circom intermediate results against JS
-    // key: num_limbs, value: signal_name[]
-    const vars_to_check = {
-      3: [
-        'z_plus_y',
-        'z_minus_y',
-        'u1',
-        'u2',
-        'u2_sq',
-        'u1_times_u2_sq',
-        // 'invsqrt',
-      ],
-      // 6: ['u1_premod'],
-    }
-    for (const [limbs, signals] of Object.entries(vars_to_check)) {
-      for (const signal of signals) {
-        const cc_signal = await getVectorSignal(
-          circuit,
-          witness,
-          signal,
-          +limbs
-        )
-        const cc_dechunked = cc_signal.reduce(
-          (acc, limb, index) => acc + (limb << (85n * BigInt(index))),
-          0n
-        )
-
-        // if (signal === 'u1') console.log(cc_dechunked - expected.debug[signal])
-        expect(
-          cc_dechunked,
-          signal + ' mismatch: ' + String(cc_dechunked - expected.debug[signal])
-        ).toEqual(expected.debug[signal])
-        console.log(signal + ': ✓ match')
+      // Check circom intermediate results against JS
+      // key: num_limbs, value: signal_name[]
+      const vars_to_check = {
+        3: [
+          'z_plus_y',
+          'z_minus_y',
+          'u1',
+          'u2',
+          'u2_sq',
+          'u1_times_u2_sq',
+          // 'invsqrt',
+        ],
+        // 6: ['u1_premod'],
       }
-    }
+      for (const [limbs, signals] of Object.entries(vars_to_check)) {
+        for (const signal of signals) {
+          const cc_signal = await getVectorSignal(
+            circuit,
+            witness,
+            signal,
+            +limbs
+          )
+          const cc_dechunked = cc_signal.reduce(
+            (acc, limb, index) => acc + (limb << (85n * BigInt(index))),
+            0n
+          )
 
-    // const circuit_result = await getVectorSignal(
-    //   circuit,
-    //   witness,
-    //   's_bytes',
-    //   32
-    // )
-    // void circuit_result
-    // void expected
-    // console.log({ circuit_result })
-    // console.log({ js_result: expected.result })
-    // expect(circuit_result).toEqual(expected.result.map(BigInt))
-    // }
+          // if (signal === 'u1') console.log(cc_dechunked - expected.debug[signal])
+          expect(
+            cc_dechunked,
+            signal +
+              ' mismatch: ' +
+              String(cc_dechunked - expected.debug[signal])
+          ).toEqual(expected.debug[signal])
+          console.log(signal + ': ✓ match')
+        }
+      }
+
+      // const circuit_result = await getVectorSignal(
+      //   circuit,
+      //   witness,
+      //   's_bytes',
+      //   32
+      // )
+      // void circuit_result
+      // void expected
+      // console.log({ circuit_result })
+      // console.log({ js_result: expected.result })
+      // expect(circuit_result).toEqual(expected.result.map(BigInt))
+    }
   })
 })
