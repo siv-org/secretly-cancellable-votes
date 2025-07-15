@@ -55,7 +55,6 @@ template ChunkedUVRatio(chunks, base) {
 // Efficiently computes a^{(p-5)/8} aka x^(2^252-3).
 template ChunkedPow2_252_3() {
     signal input x[3];
-    signal output out[3];
 
     signal x2[3] <== ChunkedMulModP()(x, x);
     signal b2[3] <== ChunkedMulModP()(x2, x);
@@ -70,7 +69,7 @@ template ChunkedPow2_252_3() {
     signal b250[3] <== ChunkedMulModP()(ChunkedPow2ModP(10)(b240), b10);
     signal pow_p_5_8[3] <== ChunkedMulModP()(ChunkedPow2ModP(2)(b250), x);
 
-    out <== pow_p_5_8;
+    signal output out[3] <== pow_p_5_8;
 }
 
 // Does x ^ (2 ^ power) mod p
