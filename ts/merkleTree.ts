@@ -72,7 +72,7 @@ const fetchVotes = async (endpoint: string): Promise<IVoteResult[]> => {
  * @param encrypted -The encrypted vote
  * @returns The hash of the encrypted vote
  */
-const hashEncryptedVote = (encrypted: string): bigint => {
+export const hashEncryptedVote = (encrypted: string): bigint => {
     // @ts-expect-error Overriding .ep privatization
     const RP = ed.RistrettoPoint.fromHex(encrypted).ep 
 

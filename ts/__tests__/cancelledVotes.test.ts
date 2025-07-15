@@ -1,6 +1,8 @@
 import { type WitnessTester } from 'circomkit'
 import { describe, it, expect } from 'bun:test'
 import * as ed from '@noble/ed25519'
+import { LeanIMT, type LeanIMTHashFunction } from '@zk-kit/lean-imt'
+
 import {
   circomkit,
   getSignal,
@@ -12,10 +14,12 @@ import {
   extendedToAffine,
   getVectorSignal,
   poseidon,
+  hashLeanIMT,
 } from '../utils.ts'
 import { DebugRistrettoPoint } from '../ristretto/reference.ts'
 import { pointToString, stringToPoint } from '../curve.ts'
 import { shouldRecompile } from '../watch-circuits.ts'
+import { hashEncryptedVote } from '../merkleTree.ts'
 
 describe('Basic multiplier (example)', () => {
   it('should multiply two numbers', async () => {
@@ -295,56 +299,70 @@ describe('MembershipProof()', () => {
     expect(hash).toBe(hashInJS)
   })
 
-  it.todo('returns true iff items are present in the tree', async () => {
-    try {
+  it('returns true if items are present in the tree', async () => {
       // Init circuit
+      const TREE_DEPTH = 16
       const circuit = await circomkit.WitnessTester('MembershipProof', {
         file: './MembershipProof',
         template: 'MembershipProof',
         recompile: shouldRecompile('MembershipProof.circom'),
-        params: [16],
+        params: [TREE_DEPTH],
       })
 
-      // Build a tree of 16 leaves
-      // @ts-expect-error Overriding .ep privatization
-      const encrypted_vote_to_cancel = stringToPoint('foobar').ep
-      const actual_state_tree_depth = 16
-      const merkle_path_indices = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-      ]
-      const merkle_path_of_cancelled_vote = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-      ]
-      const root_hash_of_all_encrypted_votes = poseidon(
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(BigInt)
-      )
+      // test data for merkle tree 
+      const groupedVotes ={
+        icecream: [ 
+          "72f302f5e02342ab95722b41e1988f89949ce701da5deb790f113cac4bfe183f", 
+          "8a8cbcc82955ec114aaab0d1476f97c89b92c21119e345bca607ea83502a6e13",
+          "d4f7070050cf218f2162ffba3d468ed3105d8a95f46eb48babfed823ca1aae64"
+        ],
+      }
 
+      const merkleTree = new LeanIMT(
+        hashLeanIMT as unknown as LeanIMTHashFunction,
+        Object.values(groupedVotes).flat().map(vote => hashEncryptedVote(vote))
+      );
+
+      const indexOfLeafToCancel = 1
+      const leafToCancel = groupedVotes.icecream[indexOfLeafToCancel]
+
+      const proof = merkleTree.generateProof(indexOfLeafToCancel)
+
+      // @ts-expect-error Overriding .ep privatization
+      const pointToCancel = ed.RistrettoPoint.fromHex(leafToCancel).ep 
+      const encryptedVoteToCancelChunked = chunk(xyztObjToArray(pointToCancel))
+
+      const siblingsLength = proof.siblings.length
+      
+      const { siblings, index, root } = proof 
+
+      for (let i = 0; i < TREE_DEPTH; i += 1) {  
+        if (i >= siblingsLength) {
+          siblings[i] = BigInt(0);
+        }
+      }
+      
       // Calculate witness for good inputs
       const witness = await circuit.calculateWitness({
-        encrypted_vote_to_cancel, // poseidon_hash[4][3]
-        actual_state_tree_depth, // integer
-        merkle_path_indices, // integer[TREE_DEPTH]
-        merkle_path_of_cancelled_vote, // poseidon_hash[TREE_DEPTH]
-        root_hash_of_all_encrypted_votes, // poseidon_hash
+        encrypted_vote_to_cancel: encryptedVoteToCancelChunked, // poseidon_hash[4][3]
+        actual_state_tree_depth: merkleTree.depth, 
+        merkle_path_index: index, 
+        merkle_path_of_cancelled_vote: siblings,
+        root_hash_of_all_encrypted_votes: root,
       })
       // Passes on good inputs
       circuit.expectConstraintPass(witness)
 
-      // Calculate witness for bad inputs
-      const witness2 = await circuit.calculateWitness({
-        encrypted_vote_to_cancel, // poseidon_hash[4][3]
-        actual_state_tree_depth, // integer
-        merkle_path_indices, // integer[TREE_DEPTH]
-        merkle_path_of_cancelled_vote, // poseidon_hash[TREE_DEPTH]
-        root_hash_of_all_encrypted_votes, // poseidon_hash
+      // failure test 
+      await circuit.expectFail({
+        encrypted_vote_to_cancel: encryptedVoteToCancelChunked, // poseidon_hash[4][3]
+        actual_state_tree_depth: merkleTree.depth, 
+        merkle_path_index: index - 1, 
+        merkle_path_of_cancelled_vote: siblings,
+        root_hash_of_all_encrypted_votes: root,
       })
-      // Fails on bad inputs
-      circuit.expectConstraintFail(witness2)
-    } catch (e: any) {
-      console.log(e.message)
-      throw new Error('Finish implementation')
-    }
-  })
+    })
+
 })
 
 describe('Encoding votes', () => {
