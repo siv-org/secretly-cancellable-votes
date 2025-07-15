@@ -41,20 +41,16 @@ template RistrettoToBytes() {
 
     // Step 4: D1 = invsqrt * u1
     signal D1[3] <== ChunkedMulModP()(invsqrt, u1);
-    // -- Confirmed above matches reference --
 
     // Step 5: D2 = invsqrt * u2
-    component mul_D2 = ChunkedMul(3, 3, base);
-    for (var i = 0; i < 3; i++) {
-        mul_D2.in1[i] <== invsqrt[i];
-        mul_D2.in2[i] <== u2[i];
-    }
+    signal D2[3] <== ChunkedMulModP()(invsqrt, u2);
+    // -- Confirmed above matches reference --
 
     // Step 6: zInv = D1 * D2 * t
     component mul_zInv_temp = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
         mul_zInv_temp.in1[i] <== D1[i];
-        mul_zInv_temp.in2[i] <== mul_D2.out[i];
+        mul_zInv_temp.in2[i] <== D2[i];
     }
 
     component mul_zInv = ChunkedMul(3, 3, base);
@@ -134,7 +130,7 @@ template RistrettoToBytes() {
     component mux_D = Multiplexor2(3);
     mux_D.sel <== isNegative_t_zInv.out;
     for (var i = 0; i < 3; i++) {
-        mux_D.in[0][i] <== mul_D2.out[i]; // D2
+        mux_D.in[0][i] <== D2[i]; // D2
         mux_D.in[1][i] <== mul_D1_invsqrt.out[i]; // D1 * INVSQRT_A_MINUS_D
     }
 
