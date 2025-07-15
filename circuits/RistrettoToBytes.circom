@@ -158,9 +158,9 @@ template INVSQRT_A_MINUS_D() {
 
 // npx snarkjs r1cs info build/RistrettoToBytes.r1cs
 // [INFO]  snarkJS: Curve: bn-128
-// [INFO]  snarkJS: # of Wires: 55741
-// [INFO]  snarkJS: # of Constraints: 56027
+// [INFO]  snarkJS: # of Wires: 55738
+// [INFO]  snarkJS: # of Constraints: 56026
 // [INFO]  snarkJS: # of Private Inputs: 12
 // [INFO]  snarkJS: # of Public Inputs: 0
-// [INFO]  snarkJS: # of Labels: 113080
+// [INFO]  snarkJS: # of Labels: 113588
 // [INFO]  snarkJS: # of Outputs: 32
