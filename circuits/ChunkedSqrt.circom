@@ -1,6 +1,8 @@
 pragma circom 2.2.2;
 
 include "./ed25519/chunkedmul.circom";
+include "gates.circom";
+include "comparators.circom";
 
 template ChunkedInvertSqrt(chunks, base) {
     signal input a[chunks];
@@ -41,9 +43,10 @@ template ChunkedUVRatio(chunks, base) {
     var SQRT_M1[3] = [ 19212814651911893326667952, 5789323763396775551972713, 13150778395323338825847616 ];
     signal root2[chunks] <== ChunkedMulModP()(x_1, SQRT_M1);
     log("circuit=");
-    log("root2=");
-    for (var i = 0; i < chunks; i++) log(root2[i]);
+    // log("root2=");
+    // for (var i = 0; i < chunks; i++) log(root2[i]);
     // -- Confirmed above matches reference --
+    signal useRoot1 <== ChunkedIsEqual(chunks)(vx2, u);
 
     // skip root checks (like vx² == u or -u) for now to keep ZK minimal
     out <== x_1;
@@ -81,4 +84,14 @@ template ChunkedPow2ModP(power) {
     }
 
     signal output out[3] <== tmp[power];
+}
+
+// Returns 1 if a[n] == b[n], 0 otherwise
+template ChunkedIsEqual(n) {
+    signal input a[n], b[n];
+
+    signal equal[n];
+    for (var i = 0; i < n; i++) equal[i] <== IsEqual()([a[i], b[i]]);
+
+    signal output out <== MultiAND(n)(equal);
 }
