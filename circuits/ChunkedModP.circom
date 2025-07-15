@@ -16,9 +16,9 @@ template ChunkedModP() {
             Because our chunks are 85-bits, multiplying by 19 means:
             `19 * 2^85 ≈ 2^89`, so the extra 4-bits of overflow needs to be added to the next limb. */
     signal folded[3], overflow[3];
-    (folded[0], overflow[0]) <== ChunkedAddSingle(85)(in[0], 19 * in[3]);
-    (folded[1], overflow[1]) <== ChunkedAddSingle(85)(in[1], 19 * in[4] + overflow[0]);
-    (folded[2], overflow[2]) <== ChunkedAddSingle(85)(in[2], 19 * in[5] + overflow[1]);
+    (folded[0], overflow[0]) <== AddSingleChunk(85)(in[0], 19 * in[3]);
+    (folded[1], overflow[1]) <== AddSingleChunk(85)(in[1], 19 * in[4] + overflow[0]);
+    (folded[2], overflow[2]) <== AddSingleChunk(85)(in[2], 19 * in[5] + overflow[1]);
 
     /** 2. We may still have 4-bits of overflow, and need to subtract p some more: */
     signal folded_minus_p[3];
@@ -37,7 +37,7 @@ template ChunkedModP() {
     signal output out[3] <== Multiplexor2(3)(in_overflow_range, [first_mux_out, second_subtraction]);
 }
 
-template ChunkedAddSingle(base) {
+template AddSingleChunk(base) {
     signal input in1;
     signal input in2;
     signal output out;
