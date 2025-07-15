@@ -428,7 +428,10 @@ class RistrettoPoint {
     const u1_2 = mod(u1 * u1)
     const u2_2 = mod(u2 * u2)
     const v = mod(a * d * u1_2 - u2_2) // 6
+    const console_log = console.log // TODO: Temp disable console.log for less debugging noise
+    console.log = () => {} // TODO: Disables console.log
     const { isValid, value: I } = invertSqrt(mod(v * u2_2)) // 7
+    console.log = console_log // TODO: Restore console.log
     const Dx = mod(I * u2) // 8
     const Dy = mod(I * Dx * v) // 9
     let x = mod((s + s) * Dx) // 10
