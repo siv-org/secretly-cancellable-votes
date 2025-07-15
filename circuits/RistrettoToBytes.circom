@@ -20,12 +20,6 @@ template RistrettoToBytes() {
 
     var base = 85;
 
-    // Constants for Ristretto encoding, in chunked form
-    var INVSQRT_A_MINUS_D_WHOLE = 54469307008909316920995813868745141605393597292927456921205312896311721017578;
-    var INVSQRT_A_MINUS_D[3] = [INVSQRT_A_MINUS_D_WHOLE % (1 << base),
-                                (INVSQRT_A_MINUS_D_WHOLE >> base) % (1 << base),
-                                (INVSQRT_A_MINUS_D_WHOLE >> (2 * base)) % (1 << base)];
-
     // Step 1: u1 = mod((z + y) * (z - y))
     signal z_plus_y[3] <== ChunkedAddAndTruncate()(z, y);
     signal z_minus_y[3] <== ChunkedSubModP()(z, y);
@@ -62,60 +56,27 @@ template RistrettoToBytes() {
     signal mux_x[3] <== Multiplexor2(3)(isNegative_t_zInv, [x, y_sqrt_m1]);
     signal mux_y[3] <== Multiplexor2(3)(isNegative_t_zInv, [y, x_sqrt_m1]);
 
-    signal D1_INVSQRT_A_MINUS_D[3] <== ChunkedMulModP()(D1, INVSQRT_A_MINUS_D);
+    signal D1_INVSQRT_A_MINUS_D[3] <== ChunkedMulModP()(D1, INVSQRT_A_MINUS_D()());
     signal D[3] <== Multiplexor2(3)(isNegative_t_zInv, [D2, D1_INVSQRT_A_MINUS_D]);
     // -- Confirmed above matches reference --
 
     // Step 9: Check if x * zInv is negative
-    component mul_x_zInv = ChunkedMul(3, 3, base);
-    for (var i = 0; i < 3; i++) {
-        mul_x_zInv.in1[i] <== mux_x[i];
-        mul_x_zInv.in2[i] <== zInv[i];
-    }
+    signal x_zInv[3] <== ChunkedMulModP()(mux_x, zInv);
+    signal isNegative_x_zInv <== ChunkedEdIsNegative()(x_zInv);
+    signal neg_y[3] <== ChunkedSubModP()(P()(), mux_y);
+    signal mux_y2[3] <== Multiplexor2(3)(isNegative_x_zInv, [mux_y, neg_y]);
 
-    component isNegative_x_zInv = IsNegativeChunked(3, base);
-    for (var i = 0; i < 3; i++) {
-        isNegative_x_zInv.in[i] <== mul_x_zInv.out[i];
-    }
-
-    // Step 10: Conditional negation of y based on x * zInv sign
-    component neg_y = ChunkedNeg(3, base);
-    for (var i = 0; i < 3; i++) {
-        neg_y.in[i] <== mux_y[i];
-    }
-
-    component mux_y_final = Multiplexor2(3);
-    mux_y_final.sel <== isNegative_x_zInv.out;
-    for (var i = 0; i < 3; i++) {
-        mux_y_final.in[0][i] <== mux_y[i]; // original y
-        mux_y_final.in[1][i] <== neg_y.out[i]; // negated y
-    }
-
-    // Step 11: Compute s = (z - y) * D
+    // Step 10: Compute s = (z - y) * D
     component sub_z_y_final = ChunkedSub(3, base);
     for (var i = 0; i < 3; i++) {
         sub_z_y_final.a[i] <== z[i];
-        sub_z_y_final.b[i] <== mux_y_final.out[i]; // adjusted y
-    }
-
-    // Choose D based on t * zInv sign
-    component mul_D1_invsqrt = ChunkedMul(3, 3, base);
-    for (var i = 0; i < 3; i++) {
-        mul_D1_invsqrt.in1[i] <== D1[i];
-        mul_D1_invsqrt.in2[i] <== INVSQRT_A_MINUS_D[i];
-    }
-
-    component mux_D = Multiplexor2(3);
-    mux_D.sel <== isNegative_t_zInv;
-    for (var i = 0; i < 3; i++) {
-        mux_D.in[0][i] <== D2[i]; // D2
-        mux_D.in[1][i] <== mul_D1_invsqrt.out[i]; // D1 * INVSQRT_A_MINUS_D
+        sub_z_y_final.b[i] <== mux_y2[i]; // adjusted y
     }
 
     component mul_s = ChunkedMul(3, 3, base);
     for (var i = 0; i < 3; i++) {
         mul_s.in1[i] <== sub_z_y_final.out[i];
-        mul_s.in2[i] <== mux_D.out[i];
+        mul_s.in2[i] <== D[i];
     }
 
     // Ensure s is positive (if negative, negate it)
@@ -229,6 +190,14 @@ template P() {
 template SQRT_M1() {
     // √(-1) aka √(a) aka 2^((p-1)/4)
     signal output out[3] <== [ 19212814651911893326667952, 5789323763396775551972713, 13150778395323338825847616 ];
+}
+
+template INVSQRT_A_MINUS_D() {
+    var base = 85;
+    var INVSQRT_A_MINUS_D_WHOLE = 54469307008909316920995813868745141605393597292927456921205312896311721017578;
+    signal output INVSQRT_A_MINUS_D[3] <== [INVSQRT_A_MINUS_D_WHOLE % (1 << base),
+                                (INVSQRT_A_MINUS_D_WHOLE >> base) % (1 << base),
+                                (INVSQRT_A_MINUS_D_WHOLE >> (2 * base)) % (1 << base)];
 }
 
 // npx snarkjs r1cs info build/RistrettoToBytes.r1cs
