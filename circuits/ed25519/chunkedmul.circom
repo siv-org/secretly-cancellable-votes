@@ -6,23 +6,22 @@ template ChunkedMul(m, n, base){
   signal input in1[m], in2[n];
   signal output out[m+n];
 
-  component lt1[m];
-  var i;
-  for (i = 0; i < m; i++) {
-    lt1[i] = LessThanPower(base);
-    lt1[i].in <== in1[i];
-    lt1[i].out === 1;
-  }
+  var i, j;
 
-  component lt2[n];
-  for (i = 0; i < n; i++) {
-    lt2[i] = LessThanPower(base);
-    lt2[i].in <== in2[i];
-    lt2[i].out === 1;
+  // Verify all in1 limbs are less than 2^base
+  signal lt1[m];
+  for (i = 0; i < m; i++) {
+    lt1[i] <== LessThanPower(base)(in1[i]);
+    lt1[i] === 1;
+  }
+  // Verify all in2 limbs are less than 2^base
+  signal lt2[n];
+  for (j = 0; j < n; j++) {
+    lt2[j] <== LessThanPower(base)(in2[j]);
+    lt2[j] === 1;
   }
 
   signal pp[n][m+n-1];
-  var j;
   for (i = 0; i < n; i++){
     for (j = 0; j < m+n-1; j++){
       if (j<i){
