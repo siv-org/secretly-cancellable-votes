@@ -8,39 +8,30 @@ include "gates.circom";
 template ChunkedModP() {
     signal input in[6]; // Multiplying 2x 3-chunked limbs together => max 6 chunks.
 
-    // Step 1: Fold high limbs by multiplying by 19 and adding to low limbs
-    signal fold3 <== ScalarChunkMul(19)(in[3]);
-    signal fold4 <== ScalarChunkMul(19)(in[4]);
-    signal fold5 <== ScalarChunkMul(19)(in[5]);
+    /** 1. Modulo p is how many times p divides in[6] (510-bits).
+           Each p division leaves a residue of 19.
+           Thus, we can fold the high limbs into our 3-chunk base limbs,
+              by multiplying each by 19, and adding to low limbs.
+           With proper carry handling:
+            Because our chunks are 85-bits, multiplying by 19 means:
+            `19 * 2^85 ≈ 2^89`, so the extra 4-bits of overflow need to be added to the next limb. */
+    signal folded[3], overflow0, overflow1, overflow2;
+    (folded[0], overflow0) <== ChunkedAddSingle(85)(in[0], 19 * in[3]);
+    (folded[1], overflow1) <== ChunkedAddSingle(85)(in[1], 19 * in[4] + overflow0);
+    (folded[2], overflow2) <== ChunkedAddSingle(85)(in[2], 19 * in[5] + overflow1);
 
-    // Add folded values to low limbs with proper carry handling
-    signal folded[3], carry0, carry1, carry2;
-    (folded[0], carry0) <== ChunkedAddSingle(85)(in[0], fold3);
-    (folded[1], carry1) <== ChunkedAddSingle(85)(in[1], fold4 + carry0);
-    (folded[2], carry2) <== ChunkedAddSingle(85)(in[2], fold5 + carry1);
-
-    // Step 2: To mod into p, we may need to subtract p:
+    /** 2. But we may still have overflow, and need to subtract p one last time: */
     signal folded_minus_p[3];
     (folded_minus_p, _) <== ChunkedSub(3, 85)(folded, [(2 ** 85 - 19), (2 ** 85 - 1), (2 ** 85 - 1)]);
 
-    // Need to mod p if:
-    // -    the biggest limb overflowed -- carry2
-    // - or folded >= p (-19 to 0)
-    signal needs_reduction <== OR()(carry2, ChunkedGreaterEqThanP()(folded));
+    /** 2b. Use our folded_minus_p if: */
+    signal needs_reduction <== OR()(
+        overflow2, // the biggest limb overflowed
+        ChunkedGreaterEqThanP()(folded) // or folded >= p (-19 to 0)
+    );
 
     signal output out[3] <== Multiplexor2(3)(needs_reduction, [folded, folded_minus_p]);
 }
-
-/** Because the chunks are ≤ 2^85, multiplying by 19 means:
-`19 * 2^85 ≈ 2^89`
-So it can fit in a slightly wider chunk (or can be reduced by carry into next limb if needed).
-For now, since we’re only folding these back into an addition, we can just multiply and let the next ChunkedAddSingle take care of overflow. */
-template ScalarChunkMul(scalar) {
-    signal input in;
-    signal output out;
-    out <== in * scalar;
-}
-
 
 template ChunkedAddSingle(base) {
     signal input in1;
@@ -63,7 +54,7 @@ template ChunkedAddSingle(base) {
 }
 
 /** Checks if a 3-chunk number is >= p (2^255 - 19) */
-// There is a small window, congruent from -19 to 0, where this could be true.
+// There is a small window, congruent (-19 to 0), where this could be true.
 template ChunkedGreaterEqThanP() {
     signal input in[3];
 
