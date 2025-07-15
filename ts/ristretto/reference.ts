@@ -943,8 +943,6 @@ function uvRatio(u: bigint, v: bigint): { isValid: boolean, value: bigint } {
   const noRoot = vx2 === mod(neg_u * SQRT_M1);   // There is no valid root, vx² = -u√(-1)
   if (useRoot1) x = root1;
   if (useRoot2 || noRoot) x = root2;          // We return root2 anyway, for const-time
-  console.log('x_2=')
-  console.log(chunkBigInt(x).join('\n'))
   if (edIsNegative(x)) x = mod(-x);
   return { isValid: useRoot1 || useRoot2, value: x };
 }

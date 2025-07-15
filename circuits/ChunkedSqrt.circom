@@ -9,13 +9,13 @@ template ChunkedInvertSqrt(chunks, base) {
 
     var ONE[3] = [1, 0, 0];
 
-    signal output out[chunks] <== ChunkedUVRatio(chunks, base)(ONE, a);
+    signal output out[chunks];
+    (out, _) <== ChunkedUVRatio(chunks, base)(ONE, a);
 }
 
 template ChunkedUVRatio(chunks, base) {
     signal input u[chunks];
     signal input v[chunks];
-    signal output out[chunks];
 
     // v3 = v * v * v
     signal v2[chunks] <== ChunkedMulModP()(v, v);
@@ -40,7 +40,7 @@ template ChunkedUVRatio(chunks, base) {
 
     // Skip useRoot1 Mux, because we already assigned x_1 <== x
     // signal root1[chunks] <== x_1; // Unused.
-    // signal useRoot1 <== ChunkedIsEqual(chunks)(vx2, u); // Unused.
+    signal useRoot1 <== ChunkedIsEqual(chunks)(vx2, u);
 
     // √(-1) aka √(a) aka 2^((p-1)/4)
     var SQRT_M1[3] = [ 19212814651911893326667952, 5789323763396775551972713, 13150778395323338825847616 ];
@@ -49,15 +49,16 @@ template ChunkedUVRatio(chunks, base) {
     signal neg_u[chunks] <== ChunkedSubModP()(P()(), u);
     signal useRoot2 <== ChunkedIsEqual(chunks)(vx2, neg_u);
 
-    signal noRoot <== ChunkedIsEqual(chunks)(vx2, ChunkedMulModP()(neg_u, SQRT_M1));
+    signal noRoot <== ChunkedIsEqual(chunks)(vx2, ChunkedMulModP()(neg_u, SQRT_M1)); // Reference includes for const-time safety.
 
-    signal x_2[chunks] <== Multiplexor2(chunks)(useRoot2, [x_1, root2]);
-    log("circuit=");
-    log("x_2=");
-    for (var i = 0; i < chunks; i++) log(x_2[i]);
-    // -- Confirmed above matches reference --
+    signal x_2[chunks] <== Multiplexor2(chunks)(OR()(useRoot2, noRoot), [x_1, root2]);
 
-    out <== x_2;
+    signal x_is_negative <== ChunkedEdIsNegative()(x_2);
+    signal neg_x_2[chunks] <== ChunkedSubModP()(P()(), x_2);
+    signal x_3[chunks] <== Multiplexor2(chunks)(x_is_negative, [x_2, neg_x_2]);
+
+    signal output out[chunks] <== x_3;
+    signal output isValid <== OR()(useRoot1, useRoot2);
 }
 
 // Efficiently computes a^{(p-5)/8} aka x^(2^252-3).
@@ -102,4 +103,11 @@ template ChunkedIsEqual(n) {
     for (var i = 0; i < n; i++) equal[i] <== IsEqual()([a[i], b[i]]);
 
     signal output out <== MultiAND(n)(equal);
+}
+
+// Little-endian check for first LE bit (last BE bit)
+template ChunkedEdIsNegative() {
+    signal input in[3];
+    signal bits[85] <== Num2Bits(85)(in[0]);
+    signal output out <== bits[0];
 }

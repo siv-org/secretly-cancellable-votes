@@ -43,6 +43,7 @@ template RistrettoToBytes() {
     signal u2_sq[3] <== ChunkedMulModP()(u2, u2);
     signal u1_times_u2_sq[3] <== ChunkedMulModP()(u1, u2_sq);
     signal invsqrt[3] <== ChunkedInvertSqrt(3, base)(u1_times_u2_sq);
+    // -- Confirmed above matches reference --
 
     // Step 4: D1 = invsqrt * u1
     component mul_D1 = ChunkedMul(3, 3, base);
