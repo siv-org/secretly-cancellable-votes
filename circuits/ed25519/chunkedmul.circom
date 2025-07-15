@@ -12,16 +12,24 @@ template ChunkedMul(m, n, base){
   AssertAllChunksAreLessThanPower(base, n)(in2);
 
   var i, j;
-  // Compute partial products (bit-level cross multiplications)
+  // Compute PartialProducts table (chunk-level cross multiplications)
+   // m=3 x n=4 example => 6 total columns (m + n - 1)
+   // Enough total cols needed for all n's to shift up to (i - 1) spots
+   //     0     1     2     3     4     5  <- j = 6 cols
+   // +-----------------------------------
+   // 0 | p0,0  p0,1  p0,2  p0,3  0     0
+   // 1 | 0     p1,0  p1,1  p1,2  p1,3  0
+   // 2 | 0     0     p2,0  p2,1  p2,2  p2,3
+   // i = 3 rows
   signal pp[n][m + n - 1];
   for (i = 0; i < n; i++) {
     for (j = 0; j < m + n - 1; j++) {
       if (j < i) {
-        pp[i][j] <== 0;
-      } else if (j >= i && j <= m - 1 + i) {
+        pp[i][j] <== 0; // bottom left triangle
+      } else if (j <= m + i - 1) { // shift up to (i - 1) spots
         pp[i][j] <== in1[j - i] * in2[i];
       } else {
-        pp[i][j] <== 0;
+        pp[i][j] <== 0; // top right triangle
       }
     }
   }
