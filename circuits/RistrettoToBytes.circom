@@ -21,11 +21,6 @@ template RistrettoToBytes() {
     var base = 85;
 
     // Constants for Ristretto encoding, in chunked form
-    var SQRT_M1_WHOLE = 19681161376707505956807079304988542015446066515923890162744021073123829784752;
-    var SQRT_M1[3] = [SQRT_M1_WHOLE % (1 << base),
-                      (SQRT_M1_WHOLE >> base) % (1 << base),
-                      (SQRT_M1_WHOLE >> (2 * base)) % (1 << base)];
-
     var INVSQRT_A_MINUS_D_WHOLE = 54469307008909316920995813868745141605393597292927456921205312896311721017578;
     var INVSQRT_A_MINUS_D[3] = [INVSQRT_A_MINUS_D_WHOLE % (1 << base),
                                 (INVSQRT_A_MINUS_D_WHOLE >> base) % (1 << base),
@@ -87,14 +82,8 @@ template RistrettoToBytes() {
     // Step 8: Conditional swap based on t * zInv sign
     // If t * zInv is negative, we need to swap x and y with sqrt(-1) factors
     // x' = y * sqrt(-1), y' = x * sqrt(-1)
-    component mul_x_sqrt_m1 = ChunkedMul(3, 3, base);
-    component mul_y_sqrt_m1 = ChunkedMul(3, 3, base);
-    for (var i = 0; i < 3; i++) {
-        mul_x_sqrt_m1.in1[i] <== x[i];
-        mul_x_sqrt_m1.in2[i] <== SQRT_M1[i];
-        mul_y_sqrt_m1.in1[i] <== y[i];
-        mul_y_sqrt_m1.in2[i] <== SQRT_M1[i];
-    }
+    signal mul_x_sqrt_m1[3] <== ChunkedMulModP()(x, SQRT_M1()());
+    signal mul_y_sqrt_m1[3] <== ChunkedMulModP()(y, SQRT_M1()());
 
     component mux_x = Multiplexor2(3);
     component mux_y = Multiplexor2(3);
@@ -102,9 +91,9 @@ template RistrettoToBytes() {
     mux_y.sel <== isNegative_t_zInv.out;
     for (var i = 0; i < 3; i++) {
         mux_x.in[0][i] <== x[i];
-        mux_x.in[1][i] <== mul_y_sqrt_m1.out[i]; // y * sqrt(-1)
+        mux_x.in[1][i] <== mul_y_sqrt_m1[i]; // y * sqrt(-1)
         mux_y.in[0][i] <== y[i];
-        mux_y.in[1][i] <== mul_x_sqrt_m1.out[i]; // x * sqrt(-1)
+        mux_y.in[1][i] <== mul_x_sqrt_m1[i]; // x * sqrt(-1)
     }
 
     // Step 9: Check if x * zInv is negative
@@ -265,6 +254,11 @@ template ChunkedToBytes(chunks, base) {
 
 template P() {
     signal output out[3] <== [(2 ** 85 - 19), (2 ** 85 - 1), (2 ** 85 - 1)];
+}
+
+template SQRT_M1() {
+    // √(-1) aka √(a) aka 2^((p-1)/4)
+    signal output out[3] <== [ 19212814651911893326667952, 5789323763396775551972713, 13150778395323338825847616 ];
 }
 
 // npx snarkjs r1cs info build/RistrettoToBytes.r1cs
