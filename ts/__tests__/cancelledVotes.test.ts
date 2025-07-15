@@ -496,6 +496,9 @@ describe('RistrettoToBytes().circom', () => {
     // for (let i = 0; i < 100; i++) {
     // const point = DebugRistrettoPoint.BASE
     const nonDebugPoint = stringToPoint('foobar random point')
+    // const nonDebugPoint = ed.RistrettoPoint.fromHex(
+    // '26666f6f6261722072616e646f6d20706f696e74a6ba240eac788d30b2b3a47e'
+    // ) // Known buggy seed
     console.log(`== seed: ${nonDebugPoint} ==`)
 
     const point = DebugRistrettoPoint.fromHex(nonDebugPoint.toHex())
