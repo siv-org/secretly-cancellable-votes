@@ -106,17 +106,20 @@ template ChunkedToBytes() {
     signal input in[chunks];
     signal output out[32];
 
-    var totalbits = chunks * base; // should be 255
+    assert(chunks * base == 255); // sanity check
 
-    assert(totalbits == 255); // sanity check
+    // Convert each chunk to bits
+    signal bits_chunk0[85] <== Num2Bits(85)(in[0]);
+    signal bits_chunk1[85] <== Num2Bits(85)(in[1]);
+    signal bits_chunk2[85] <== Num2Bits(85)(in[2]);
 
-    // Flatten
-    signal acc[chunks + 1];
-    acc[0] <== 0;
-    for (var i = 0; i < chunks; i++) {
-        acc[i+1] <== acc[i] + in[i] * (1 << (i * base));
+    // Combine all bits into a single array
+    signal bits[255];
+    for (var i = 0; i < 85; i++) {
+        bits[i] <== bits_chunk0[i];
+        bits[i + 85] <== bits_chunk1[i];
+        bits[i + 170] <== bits_chunk2[i];
     }
-    signal bits[255] <== Num2Bits(255)(acc[chunks]);
 
     // Pack first 31 full bytes
     signal byte_acc[32][9];

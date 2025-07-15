@@ -12,7 +12,6 @@ import {
   extendedToAffine,
   getVectorSignal,
   poseidon,
-  chunkBigInt,
 } from '../utils.ts'
 import { DebugRistrettoPoint } from '../ristretto/reference.ts'
 import { pointToString, stringToPoint } from '../curve.ts'
@@ -467,24 +466,7 @@ describe('HashAdminSalt circuit', () => {
 })
 
 describe('RistrettoToBytes().circom', () => {
-  it.todo('can correctly calculate InverseSqrt(t) in circuit', async () => {
-    const circuit = await circomkit.WitnessTester('ChunkedInvertSqrt', {
-      file: './ChunkedSqrt',
-      template: 'ChunkedInvertSqrt',
-      recompile: shouldRecompile('./ChunkedSqrt.circom'),
-      params: [3, 3, 85],
-    })
-
-    const a =
-      1824575995961533715804695610269531409259964862024837291270780613852485667720n
-    const expected = 123456789n
-    const witness = await circuit.calculateWitness({ a: chunkBigInt(a) })
-    const out = await getVectorSignal(circuit, witness, 'out', 3)
-    console.log({ out })
-    expect(out).toEqual(chunkBigInt(expected))
-  })
-
-  it.only('RistrettoToBytes() in circuit should match JS', async () => {
+  it('RistrettoToBytes() in circuit should match JS', async () => {
     const circuit = await circomkit.WitnessTester('RistrettoToBytes', {
       file: './RistrettoToBytes',
       template: 'RistrettoToBytes',
@@ -495,7 +477,7 @@ describe('RistrettoToBytes().circom', () => {
 
     for (let i = 0; i < 1; i++) {
       const nonDebugPoint = stringToPoint('foobar random point')
-      console.log(`== seed: ${nonDebugPoint} ==`)
+      // console.log(`== seed: ${nonDebugPoint} ==`)
 
       const point = DebugRistrettoPoint.fromHex(nonDebugPoint.toHex())
       const expected = point.toRawBytes()
@@ -508,7 +490,7 @@ describe('RistrettoToBytes().circom', () => {
       const witness = await circuit.calculateWitness({
         P: chunk(xyztObjToArray(ep)),
       })
-      console.log()
+      // console.log()
 
       // Check circom intermediate results against JS
       // key: num_limbs, value: signal_name[]
@@ -548,7 +530,7 @@ describe('RistrettoToBytes().circom', () => {
               ' mismatch: ' +
               String(cc_dechunked - expected.debug[signal])
           ).toEqual(expected.debug[signal])
-          console.log(signal + ': ✓ match')
+          // console.log(signal + ': ✓ match')
         }
       }
 
