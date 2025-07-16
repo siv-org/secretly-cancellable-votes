@@ -1,6 +1,7 @@
 pragma circom 2.2.2;
 
 include "./lt.circom";
+include "../ChunkedModP.circom";
 
 template ChunkedMul(m, n, base){
   signal input in1[m], in2[n];
@@ -78,4 +79,32 @@ template AssertAllChunksAreLessThanPower(base, chunks) {
 template ChunkedMulModP() {
   signal input in1[3], in2[3];
   signal output out[3] <== ChunkedModP()(ChunkedMul(3, 3, 85)(in1, in2));
+}
+
+//  const X1Z2 = mod(X1 * Z2)
+//    const X2Z1 = mod(X2 * Z1)
+//    const Y1Z2 = mod(Y1 * Z2)
+// const Y2Z1 = mod(Y2 * Z1)
+// return X1Z2 === X2Z1 && Y1Z2 === Y2Z1
+// 
+template IsEqualRPPoint() {
+  signal input in1[4][3], in2[4][3];
+
+  signal X1Z2[3], X2Z1[3], Y1Z2[3], Y2Z1[3];
+
+  signal x1[3] <== in1[0];
+  signal z2[3] <== in2[2];
+  signal x2[3] <== in2[0];
+  signal z1[3] <== in1[2];
+  signal y1[3] <== in1[1];
+  signal y2[3] <== in2[1];
+
+  X1Z2 <== ChunkedMulModP()(x1, z2);
+  X2Z1 <== ChunkedMulModP()(x2, z1);
+  Y1Z2 <== ChunkedMulModP()(y1, z2);
+  Y2Z1 <== ChunkedMulModP()(y2, z1);
+  
+  // assert equality of X1Z2 and X2Z1
+  X1Z2 === X2Z1;
+  Y1Z2 === Y2Z1;
 }

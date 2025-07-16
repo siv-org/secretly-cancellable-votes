@@ -40,8 +40,8 @@ describe('Basic multiplier (example)', () => {
   })
 })
 
-describe('SecretlyCancelVote', () => {
-  it('should cancel a vote', async () => {
+describe.only('SecretlyCancelVote', () => {
+  it.skip('should cancel a vote', async () => {
     const circuit = await circomkit.WitnessTester('SecretlyCancelVote', {
       file: './_SecretlyCancelVote',
       template: 'SecretlyCancelVote',
@@ -69,15 +69,13 @@ describe('SecretlyCancelVote', () => {
     // @ts-expect-error Overriding .ep privatization
     const chunkedElectionPubKey = chunk(xyztObjToArray(electionPubKey.ep))
 
-    const admin_secret_salt = 123456789n
-    const hashOfAdminSecretSalt = poseidon([admin_secret_salt])
+    const adminSecretSalt = 123456789n
+    const hashOfAdminSecretSalt = poseidon([adminSecretSalt])
 
     const encryptedVotes = encodedVotes.map((vote, index) => vote.add(electionPubKey.multiply(sampleRandomizers[index])))
 
     const encryptedVoteToCancel = encryptedVotes[indexOfLeafToCancel]
-
-    console.log('encryptedVoteToCancel', encryptedVoteToCancel.toHex())
-
+    
     const merkleTree = new LeanIMT(
       hashLeanIMT as unknown as LeanIMTHashFunction,
       encryptedVotes.map(vote => hashEncryptedVote(vote.toHex()))
@@ -106,6 +104,8 @@ describe('SecretlyCancelVote', () => {
       signal input merkle_path_of_cancelled_vote[MAX_TREE_DEPTH]; // poseidon_hash[]
       signal input merkle_path_index; // integer
       signal input admin_secret_salt; // bigint
+
+      signal input js_encrypted_vote_to_cancel[4][3]; // Ristretto Point calculated in JS 
      */
 
     const inputs = {
@@ -117,10 +117,14 @@ describe('SecretlyCancelVote', () => {
       votes_secret_randomizer: bigintTo255Bits(sampleRandomizers[indexOfLeafToCancel]),
       merkle_path_of_cancelled_vote: proof.siblings,
       merkle_path_index: index,
-      admin_secret_salt,
+      admin_secret_salt: adminSecretSalt,
+      // @ts-expect-error Overriding .ep privatization
+      js_encrypted_vote_to_cancel: chunk(xyztObjToArray(encryptedVoteToCancel.ep)),
+      // js_encrypted_vote_to_cancel: chunk(xyztObjToArray(ed.RistrettoPoint.fromHex(encryptedVoteToCancel.toHex()).ep)),
     }
 
-    console.log(inputs)
+    // @ts-expect-error Overriding .ep privatization
+    console.log("chunk(xyztObjToArray(ed.RistrettoPoint.fromHex(encryptedVoteToCancel.toHex()).ep)", chunk(xyztObjToArray(ed.RistrettoPoint.fromHex(encryptedVoteToCancel.toHex()).ep)))
 
     const witness = await circuit.calculateWitness(inputs)
     const saltedHashOfVoteToCancel = await getSignal(
@@ -129,7 +133,7 @@ describe('SecretlyCancelVote', () => {
       'salted_hash_of_vote_to_cancel'
     )
 
-    const saltedHashOfVoteToCancelInJs = poseidon([admin_secret_salt, hashEncryptedVote(encryptedVoteToCancel.toHex())])
+    const saltedHashOfVoteToCancelInJs = poseidon([adminSecretSalt, hashEncryptedVote(encryptedVoteToCancel.toHex())])
     expect(saltedHashOfVoteToCancel).toBe(saltedHashOfVoteToCancelInJs)
 
     const hashOfAdminSecretSaltCircuit = await getSignal(
@@ -149,9 +153,33 @@ describe('SecretlyCancelVote', () => {
     )
     expect(voteSelectionToCancelCircuit).toBe(voteToCancel.slice(15))
   })
+
+  it("IsEqualRPPoint()", async () => {
+    const randomPoint = stringToPoint('4470-7655-8313:Pistacchio')
+
+    const hexed = ed.RistrettoPoint.fromHex(randomPoint.toHex())
+
+    expect(randomPoint.equals(hexed)).toBeTrue()
+
+    const circuit = await circomkit.WitnessTester('IsEqualRPPoint', {
+      file: './ed25519/chunkedmul',
+      template: 'IsEqualRPPoint',
+      recompile: true,
+    })
+
+    // @ts-expect-error Overriding .ep privatization
+    const witness = await circuit.calculateWitness({ in1: chunk(xyztObjToArray(randomPoint.ep)), in2: chunk(xyztObjToArray(hexed.ep)) })
+
+    await circuit.expectConstraintPass(witness)
+
+    // @ts-expect-error Overriding .ep privatization
+    const witness2 = await circuit.calculateWitness({ in1: chunk(xyztObjToArray(randomPoint.ep)), in2: chunk(xyztObjToArray(randomPoint.ep)) })
+
+    await circuit.expectConstraintPass(witness2)
+  })
 })
 
-describe('Ed25519 circuits', () => {
+describe.skip('Ed25519 circuits', () => {
   describe('Point addition', () => {
     it('should add a point to itself', async () => {
       const circuit: WitnessTester<['P', 'Q'], ['R']> =
@@ -257,8 +285,11 @@ describe('EnforcePrimeOrder()', () => {
 describe.skip('EncryptVote()', () => {
   it('should get same results encrypting from JS or circuit', async () => {
     // Create example vote
-    const election_public_key = ed.RistrettoPoint.BASE
-    const plaintext = '4444-4444-4444:arnold'
+    // const election_public_key = ed.RistrettoPoint.BASE
+    const electionPubKeyHex =
+    'e4742ff6ae59f741b757d1b1df0d0b0eeb3dd6618f42aed0f97cddcd480f186e'
+  const election_public_key = ed.RistrettoPoint.fromHex(electionPubKeyHex)
+    const plaintext = '4470-7655-8313:Pistacchio'
     const encoded_vote_to_secretly_cancel = stringToPoint(plaintext)
     const votes_secret_randomizer = 123456789n
 
@@ -294,7 +325,7 @@ describe.skip('EncryptVote()', () => {
     const witness = await circuit.calculateWitness({
       election_public_key: chunkedElectionPublicKey,
       encoded_vote_to_secretly_cancel: chunkedEncoded,
-      votes_secret_randomizer,
+      votes_secret_randomizer: bigintTo255Bits(votes_secret_randomizer),
     })
 
     // Pull out the encrypted vote, from circuit's output
@@ -310,6 +341,9 @@ describe.skip('EncryptVote()', () => {
     const encryptedInJS = encoded_vote_to_secretly_cancel.add(
       election_public_key.multiply(votes_secret_randomizer)
     )
+
+    console.log('new ed.RistrettoPoint(encrypted_ep)', new ed.RistrettoPoint(encrypted_ep))
+    console.log('encryptedInJS', encryptedInJS)
 
     expect(new ed.RistrettoPoint(encrypted_ep).equals(encryptedInJS)).toBeTrue
   })

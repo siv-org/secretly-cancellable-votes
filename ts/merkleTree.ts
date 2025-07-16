@@ -78,12 +78,16 @@ export const hashEncryptedVote = (encrypted: string): bigint => {
 
     const chunked = chunk(xyztObjToArray(RP))
 
+    console.log("Chunked before hashing", chunked);
+
     const hash = poseidon([
         poseidon([chunked[0][0], chunked[0][1], chunked[0][2]]),
         poseidon([chunked[1][0], chunked[1][1], chunked[1][2]]),
         poseidon([chunked[2][0], chunked[2][1], chunked[2][2]]),
         poseidon([chunked[3][0], chunked[3][1], chunked[3][2]])
     ])
+
+    console.log("Hash", hash)
 
     return hash 
 }

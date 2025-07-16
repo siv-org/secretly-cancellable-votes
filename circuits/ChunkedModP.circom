@@ -2,6 +2,7 @@ pragma circom 2.2.2;
 
 include "./ed25519/chunkedmul.circom";
 include "./ed25519/ChunkedSub.circom";
+include "./RistrettoToBytes.circom";
 include "gates.circom";
 
 /** This takes a 6-chunk input and outputs a 3-chunk result, mod P (2^255 - 19) */
