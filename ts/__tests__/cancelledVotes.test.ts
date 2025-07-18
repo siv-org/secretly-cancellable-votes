@@ -147,18 +147,20 @@ describe('SecretlyCancelVote', () => {
     )
 
     const witness = await circuit.calculateWitness(inputs)
+
+    // Confirm saltedHasOfVoteToCancel is calculating correctly
     const saltedHashOfVoteToCancel = await getSignal(
       circuit,
       witness,
       'salted_hash_of_vote_to_cancel'
     )
-
     const saltedHashOfVoteToCancelInJs = poseidon([
       adminSecretSalt,
-      hashEncryptedVote(encryptedVoteToCancel.toHex()),
+      hashEncryptedVote(encodedVotes[indexOfLeafToCancel].toHex()),
     ])
     expect(saltedHashOfVoteToCancel).toBe(saltedHashOfVoteToCancelInJs)
 
+    // Confirm hashOfAdminSecretSalt is calculating correctly
     const hashOfAdminSecretSaltCircuit = await getSignal(
       circuit,
       witness,
@@ -166,6 +168,7 @@ describe('SecretlyCancelVote', () => {
     )
     expect(hashOfAdminSecretSaltCircuit).toBe(hashOfAdminSecretSalt)
 
+    // Confirm voteSelectionToCancel is calculating correctly
     const voteSelectionToCancel = (await getSignal(
       circuit,
       witness,
