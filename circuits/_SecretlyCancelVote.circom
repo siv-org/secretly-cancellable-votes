@@ -8,17 +8,17 @@ include "poseidon.circom";
 include "HashAdminSalt.circom";
 include "HashPoint.circom";
 include "RistrettoToBytes.circom";
-include "ed25519/chunkedmul.circom";
+include "./AssertEqualRPPoints.circom";
 
 /**
-  Verification #: 4470-7655-8313
+Verification #: 4470-7655-8313
 
-  icecream
-    plaintext: 4470-7655-8313:Pistacchio
-    encoded: 32343437302d373635352d383331333a5069737461636368696f77329d87430f
-    randomizer: 1824575995961533715804695610269531409259964862024837291270780613852485667720
-      encrypted: 66a82bb523bddf2a1d9ea1de7cdf65f04ee17716edfa20dfb5c16301e4dd9a70
-      lock: 6671f6d6d4e4993aec2b44f0e6c6f34211b062c0a70f80989d2bc075ba384146
+icecream
+  plaintext: 4470-7655-8313:Pistacchio
+  encoded: 32343437302d373635352d383331333a5069737461636368696f77329d87430f
+  randomizer: 1824575995961533715804695610269531409259964862024837291270780613852485667720
+    encrypted: 66a82bb523bddf2a1d9ea1de7cdf65f04ee17716edfa20dfb5c16301e4dd9a70
+    lock: 6671f6d6d4e4993aec2b44f0e6c6f34211b062c0a70f80989d2bc075ba384146
 */
 template SecretlyCancelVote(MAX_TREE_DEPTH) {
     // Public inputs
@@ -51,7 +51,7 @@ template SecretlyCancelVote(MAX_TREE_DEPTH) {
     log(js_encrypted_vote_to_cancel[0][1]);
     log(js_encrypted_vote_to_cancel[0][2]);
 
-    IsEqualRPPoint()(encrypted_vote_to_cancel, js_encrypted_vote_to_cancel);
+    AssertEqualRPPoints()(encrypted_vote_to_cancel, js_encrypted_vote_to_cancel);
   
     // Note: Because the above call depends on `votes_secret_randomizer`, it also helps prevent admin from cancelling unauthorized votes, since only voter knows the randomizer, not admin.
 
