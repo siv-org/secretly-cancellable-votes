@@ -169,11 +169,16 @@ describe('SecretlyCancelVote', () => {
     expect(hashOfAdminSecretSaltCircuit).toBe(hashOfAdminSecretSalt)
 
     // Confirm voteSelectionToCancel is calculating correctly
-    const voteSelectionToCancel = (await getSignal(
-      circuit,
-      witness,
-      'vote_selection_to_cancel'
-    )) as bigint[]
+    const voteSelectionToCancel = (
+      await getVectorSignal(
+        circuit,
+        witness,
+        'vote_selection_to_cancel',
+        16 // MAX_VOTE_CONTENT_LENGTH
+      )
+    )
+      .map((x) => Number(x))
+      .filter((x) => x !== 0)
     const voteSelectionToCancelCircuit = new TextDecoder().decode(
       Uint8Array.from(voteSelectionToCancel)
     )
