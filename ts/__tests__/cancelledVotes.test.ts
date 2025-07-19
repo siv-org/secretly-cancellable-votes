@@ -15,11 +15,14 @@ import {
   getVectorSignal,
   poseidon,
   hashLeanIMT,
+  chunkedPointSignalToRP,
 } from '../utils.ts'
 import { DebugRistrettoPoint } from '../ristretto/reference.ts'
 import { pointToString, stringToPoint } from '../curve.ts'
 import { shouldRecompile } from '../watch-circuits.ts'
 import { hashEncryptedVote } from '../merkleTree.ts'
+
+const TREE_DEPTH = 16
 
 describe('Basic multiplier (example)', () => {
   it('should multiply two numbers', async () => {
@@ -38,13 +41,13 @@ describe('Basic multiplier (example)', () => {
   })
 })
 
-describe.todo('SecretlyCancelVote', () => {
+describe('SecretlyCancelVote', () => {
   it('should cancel a vote', async () => {
     const circuit = await circomkit.WitnessTester('SecretlyCancelVote', {
       file: './_SecretlyCancelVote',
       template: 'SecretlyCancelVote',
       recompile: shouldRecompile('_SecretlyCancelVote.circom'),
-      params: [16],
+      params: [TREE_DEPTH],
       pubs: [
         'root_hash_of_all_encrypted_votes',
         'election_public_key',
@@ -52,8 +55,19 @@ describe.todo('SecretlyCancelVote', () => {
       ],
     })
 
-    const sampleVote = '4470-7655-8313:Pistacchio'
-    const encoded = stringToPoint(sampleVote)
+    // Votes in the election
+    const sampleVotes = [
+      '1234-5555-5555:Pistacchio',
+      '2345-5555-5555:Strawberry',
+      '3456-5555-5555:Chocolate',
+      '4567-5555-5555:Chocolate',
+    ]
+    const sampleRandomizers = [123456789n, 223456789n, 323456789n, 423456789n]
+
+    const indexOfLeafToCancel = 0
+    const voteToCancel = sampleVotes[indexOfLeafToCancel]
+
+    const encodedVotes = sampleVotes.map((vote) => stringToPoint(vote))
 
     const electionPubKeyHex =
       'e4742ff6ae59f741b757d1b1df0d0b0eeb3dd6618f42aed0f97cddcd480f186e'
@@ -61,34 +75,77 @@ describe.todo('SecretlyCancelVote', () => {
     // @ts-expect-error Overriding .ep privatization
     const chunkedElectionPubKey = chunk(xyztObjToArray(electionPubKey.ep))
 
-    const admin_secret_salt = 123456789n
-    const hashOfAdminSecretSalt = poseidon([admin_secret_salt])
+    const adminSecretSalt = 123456789n
+    const hashOfAdminSecretSalt = poseidon([adminSecretSalt])
+
+    const encryptedVotes = encodedVotes.map((vote, index) =>
+      vote.add(electionPubKey.multiply(sampleRandomizers[index]))
+    )
+
+    const encryptedVoteToCancel = encryptedVotes[indexOfLeafToCancel]
+
+    const merkleTree = new LeanIMT(
+      hashLeanIMT as unknown as LeanIMTHashFunction,
+      encryptedVotes.map((vote) => hashEncryptedVote(vote.toHex()))
+    )
+
+    const proof = merkleTree.generateProof(indexOfLeafToCancel)
+    const { root, index } = proof
+
+    const siblingsLength = proof.siblings.length
+    for (let i = 0; i < TREE_DEPTH; i += 1) {
+      if (i >= siblingsLength) {
+        proof.siblings[i] = 0n
+      }
+    }
 
     const inputs = {
-      root_hash_of_all_encrypted_votes: 1234n,
+      root_hash_of_all_encrypted_votes: root,
       election_public_key: chunkedElectionPubKey,
-      actual_tree_depth: 16,
-      merkle_path_index: 0,
-      merkle_path_of_cancelled_vote: [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-      ],
-      admin_secret_salt,
-      // @ts-expect-error Overriding .ep privatization
-      encoded_vote_to_secretly_cancel: chunk(encoded.ep),
-      votes_secret_randomizer:
-        bigintTo255Bits(
-          1824575995961533715804695610269531409259964862024837291270780613852485667720n
-        ),
+      actual_tree_depth: merkleTree.depth,
+      encoded_vote_to_secretly_cancel: chunk(
+        // @ts-expect-error Overriding .ep privatization
+        xyztObjToArray(encodedVotes[indexOfLeafToCancel].ep)
+      ),
+      votes_secret_randomizer: bigintTo255Bits(
+        sampleRandomizers[indexOfLeafToCancel]
+      ),
+      merkle_path_of_cancelled_vote: proof.siblings,
+      merkle_path_index: index,
+      admin_secret_salt: adminSecretSalt,
+      js_encrypted_vote_to_cancel: chunk(
+        xyztObjToArray(
+          // @ts-expect-error Overriding .ep privatization
+          ed.RistrettoPoint.fromHex(encryptedVoteToCancel.toHex()).ep
+        )
+      ),
     }
 
     const witness = await circuit.calculateWitness(inputs)
+
+    // Extract encryptedVote from circuit.
+    const encryptedVoteSignal = await getChunkedPointSignal(
+      circuit,
+      witness,
+      'encrypted_vote_to_cancel'
+    )
+    // Test the points pass .equals()
+    const encryptedFromCircuit = chunkedPointSignalToRP(encryptedVoteSignal)
+    expect(encryptedFromCircuit.equals(encryptedVoteToCancel)).toBeTrue()
+
+    // Confirm saltedHasOfVoteToCancel is calculating correctly
     const saltedHashOfVoteToCancel = await getSignal(
       circuit,
       witness,
       'salted_hash_of_vote_to_cancel'
     )
-    console.log({ saltedHashOfVoteToCancel })
+    const saltedHashOfVoteToCancelInJs = poseidon([
+      adminSecretSalt,
+      hashEncryptedVote(encodedVotes[indexOfLeafToCancel].toHex()),
+    ])
+    expect(saltedHashOfVoteToCancel).toBe(saltedHashOfVoteToCancelInJs)
 
+    // Confirm hashOfAdminSecretSalt is calculating correctly
     const hashOfAdminSecretSaltCircuit = await getSignal(
       circuit,
       witness,
@@ -96,15 +153,52 @@ describe.todo('SecretlyCancelVote', () => {
     )
     expect(hashOfAdminSecretSaltCircuit).toBe(hashOfAdminSecretSalt)
 
-    const voteSelectionToCancel = (await getSignal(
-      circuit,
-      witness,
-      'vote_selection_to_cancel'
-    )) as bigint[]
+    // Confirm voteSelectionToCancel is calculating correctly
+    const voteSelectionToCancel = (
+      await getVectorSignal(
+        circuit,
+        witness,
+        'vote_selection_to_cancel',
+        16 // MAX_VOTE_CONTENT_LENGTH
+      )
+    )
+      .map((x) => Number(x))
+      .filter((x) => x !== 0)
     const voteSelectionToCancelCircuit = new TextDecoder().decode(
       Uint8Array.from(voteSelectionToCancel)
     )
-    expect(voteSelectionToCancelCircuit).toBe(sampleVote.slice(15))
+    expect(voteSelectionToCancelCircuit).toBe(voteToCancel.slice(15))
+  })
+
+  it('AssertEqualRPPoints()', async () => {
+    const randomPoint = stringToPoint('4470-7655-8313:Pistacchio')
+
+    const circuit = await circomkit.WitnessTester('IsEqualRPPoint', {
+      file: './AssertEqualRPPoints',
+      template: 'AssertEqualRPPoints',
+      recompile: shouldRecompile('AssertEqualRPPoints.circom'),
+    })
+
+    // Testing a point against itself should pass
+    const witness2 = await circuit.calculateWitness({
+      // @ts-expect-error Overriding .ep privatization
+      p1: chunk(xyztObjToArray(randomPoint.ep)),
+      // @ts-expect-error Overriding .ep privatization
+      p2: chunk(xyztObjToArray(randomPoint.ep)),
+    })
+    await circuit.expectConstraintPass(witness2)
+
+    // Encoding .toHex(), then decoding .fromHex() should still pass
+    const hexed = ed.RistrettoPoint.fromHex(randomPoint.toHex())
+    expect(randomPoint.equals(hexed)).toBeTrue()
+
+    const witness = await circuit.calculateWitness({
+      // @ts-expect-error Overriding .ep privatization
+      p1: chunk(xyztObjToArray(randomPoint.ep)),
+      // @ts-expect-error Overriding .ep privatization
+      p2: chunk(xyztObjToArray(hexed.ep)),
+    })
+    await circuit.expectConstraintPass(witness)
   })
 })
 
@@ -211,11 +305,14 @@ describe('EnforcePrimeOrder()', () => {
   })
 })
 
-describe('EncryptVote()', () => {
-  it.skip('should get same results encrypting from JS or circuit', async () => {
+describe.skip('EncryptVote()', () => {
+  it('should get same results encrypting from JS or circuit', async () => {
     // Create example vote
-    const election_public_key = ed.RistrettoPoint.BASE
-    const plaintext = '4444-4444-4444:arnold'
+    // const election_public_key = ed.RistrettoPoint.BASE
+    const electionPubKeyHex =
+      'e4742ff6ae59f741b757d1b1df0d0b0eeb3dd6618f42aed0f97cddcd480f186e'
+    const election_public_key = ed.RistrettoPoint.fromHex(electionPubKeyHex)
+    const plaintext = '4470-7655-8313:Pistacchio'
     const encoded_vote_to_secretly_cancel = stringToPoint(plaintext)
     const votes_secret_randomizer = 123456789n
 
@@ -268,6 +365,12 @@ describe('EncryptVote()', () => {
       election_public_key.multiply(votes_secret_randomizer)
     )
 
+    console.log(
+      'new ed.RistrettoPoint(encrypted_ep)',
+      new ed.RistrettoPoint(encrypted_ep)
+    )
+    console.log('encryptedInJS', encryptedInJS)
+
     expect(new ed.RistrettoPoint(encrypted_ep).equals(encryptedInJS)).toBeTrue
   })
 
@@ -300,69 +403,69 @@ describe('MembershipProof()', () => {
   })
 
   it('returns true if items are present in the tree', async () => {
-      // Init circuit
-      const TREE_DEPTH = 16
-      const circuit = await circomkit.WitnessTester('MembershipProof', {
-        file: './MembershipProof',
-        template: 'MembershipProof',
-        recompile: shouldRecompile('MembershipProof.circom'),
-        params: [TREE_DEPTH],
-      })
-
-      // test data for merkle tree 
-      const groupedVotes ={
-        icecream: [ 
-          "72f302f5e02342ab95722b41e1988f89949ce701da5deb790f113cac4bfe183f", 
-          "8a8cbcc82955ec114aaab0d1476f97c89b92c21119e345bca607ea83502a6e13",
-          "d4f7070050cf218f2162ffba3d468ed3105d8a95f46eb48babfed823ca1aae64"
-        ],
-      }
-
-      const merkleTree = new LeanIMT(
-        hashLeanIMT as unknown as LeanIMTHashFunction,
-        Object.values(groupedVotes).flat().map(vote => hashEncryptedVote(vote))
-      );
-
-      const indexOfLeafToCancel = 1
-      const leafToCancel = groupedVotes.icecream[indexOfLeafToCancel]
-
-      const proof = merkleTree.generateProof(indexOfLeafToCancel)
-
-      // @ts-expect-error Overriding .ep privatization
-      const pointToCancel = ed.RistrettoPoint.fromHex(leafToCancel).ep 
-      const encryptedVoteToCancelChunked = chunk(xyztObjToArray(pointToCancel))
-
-      const siblingsLength = proof.siblings.length
-      
-      const { siblings, index, root } = proof 
-
-      for (let i = 0; i < TREE_DEPTH; i += 1) {  
-        if (i >= siblingsLength) {
-          siblings[i] = BigInt(0);
-        }
-      }
-      
-      // Calculate witness for good inputs
-      const witness = await circuit.calculateWitness({
-        encrypted_vote_to_cancel: encryptedVoteToCancelChunked, // poseidon_hash[4][3]
-        actual_state_tree_depth: merkleTree.depth, 
-        merkle_path_index: index, 
-        merkle_path_of_cancelled_vote: siblings,
-        root_hash_of_all_encrypted_votes: root,
-      })
-      // Passes on good inputs
-      circuit.expectConstraintPass(witness)
-
-      // failure test 
-      await circuit.expectFail({
-        encrypted_vote_to_cancel: encryptedVoteToCancelChunked, // poseidon_hash[4][3]
-        actual_state_tree_depth: merkleTree.depth, 
-        merkle_path_index: index - 1, 
-        merkle_path_of_cancelled_vote: siblings,
-        root_hash_of_all_encrypted_votes: root,
-      })
+    // Init circuit
+    const circuit = await circomkit.WitnessTester('MembershipProof', {
+      file: './MembershipProof',
+      template: 'MembershipProof',
+      recompile: shouldRecompile('MembershipProof.circom'),
+      params: [TREE_DEPTH],
     })
 
+    // test data for merkle tree
+    const groupedVotes = {
+      icecream: [
+        '72f302f5e02342ab95722b41e1988f89949ce701da5deb790f113cac4bfe183f',
+        '8a8cbcc82955ec114aaab0d1476f97c89b92c21119e345bca607ea83502a6e13',
+        'd4f7070050cf218f2162ffba3d468ed3105d8a95f46eb48babfed823ca1aae64',
+      ],
+    }
+
+    const merkleTree = new LeanIMT(
+      hashLeanIMT as unknown as LeanIMTHashFunction,
+      Object.values(groupedVotes)
+        .flat()
+        .map((vote) => hashEncryptedVote(vote))
+    )
+
+    const indexOfLeafToCancel = 1
+    const leafToCancel = groupedVotes.icecream[indexOfLeafToCancel]
+
+    const proof = merkleTree.generateProof(indexOfLeafToCancel)
+
+    // @ts-expect-error Overriding .ep privatization
+    const pointToCancel = ed.RistrettoPoint.fromHex(leafToCancel).ep
+    const encryptedVoteToCancelChunked = chunk(xyztObjToArray(pointToCancel))
+
+    const siblingsLength = proof.siblings.length
+
+    const { siblings, index, root } = proof
+
+    for (let i = 0; i < TREE_DEPTH; i += 1) {
+      if (i >= siblingsLength) {
+        siblings[i] = BigInt(0)
+      }
+    }
+
+    // Calculate witness for good inputs
+    const witness = await circuit.calculateWitness({
+      encrypted_vote_to_cancel: encryptedVoteToCancelChunked, // poseidon_hash[4][3]
+      actual_state_tree_depth: merkleTree.depth,
+      merkle_path_index: index,
+      merkle_path_of_cancelled_vote: siblings,
+      root_hash_of_all_encrypted_votes: root,
+    })
+    // Passes on good inputs
+    circuit.expectConstraintPass(witness)
+
+    // failure test
+    await circuit.expectFail({
+      encrypted_vote_to_cancel: encryptedVoteToCancelChunked, // poseidon_hash[4][3]
+      actual_state_tree_depth: merkleTree.depth,
+      merkle_path_index: index - 1,
+      merkle_path_of_cancelled_vote: siblings,
+      root_hash_of_all_encrypted_votes: root,
+    })
+  })
 })
 
 describe('Encoding votes', () => {

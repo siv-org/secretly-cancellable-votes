@@ -29,8 +29,6 @@ template BinaryMerkleRoot(MAX_DEPTH) {
     signal indices[MAX_DEPTH] <== Num2Bits(MAX_DEPTH)(index);
 
     for (var i = 0; i < MAX_DEPTH; i++) {
-        indices[i] * (1 - indices[i]) === 0;
-
         var isDepth = IsEqual()([depth, i]);
 
         roots[i] <== isDepth * nodes[i];

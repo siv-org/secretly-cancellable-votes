@@ -1,6 +1,7 @@
 pragma circom 2.2.2;
 
 include "./lt.circom";
+include "../ChunkedModP.circom";
 
 template ChunkedMul(m, n, base){
   signal input in1[m], in2[n];
