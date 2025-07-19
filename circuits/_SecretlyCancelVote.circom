@@ -41,16 +41,6 @@ template SecretlyCancelVote(MAX_TREE_DEPTH) {
     signal encrypted_vote_to_cancel[4][3];
     encrypted_vote_to_cancel <== EncryptVote()(election_public_key, encoded_vote_to_secretly_cancel, votes_secret_randomizer);
 
-    log("encrypted_vote_to_cancel");
-    log(encrypted_vote_to_cancel[0][0]);
-    log(encrypted_vote_to_cancel[0][1]);
-    log(encrypted_vote_to_cancel[0][2]);
-
-    log("js_encrypted_vote_to_cancel");
-    log(js_encrypted_vote_to_cancel[0][0]);
-    log(js_encrypted_vote_to_cancel[0][1]);
-    log(js_encrypted_vote_to_cancel[0][2]);
-
     AssertEqualRPPoints()(encrypted_vote_to_cancel, js_encrypted_vote_to_cancel);
   
     // Note: Because the above call depends on `votes_secret_randomizer`, it also helps prevent admin from cancelling unauthorized votes, since only voter knows the randomizer, not admin.

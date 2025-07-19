@@ -83,7 +83,7 @@ export const hashEncryptedVote = (encrypted: string): bigint => {
 
   const chunked = chunk(xyztObjToArray(RP))
 
-  console.log('Chunked before hashing', chunked)
+  //   console.log('Chunked before hashing', chunked)
 
   const hash = poseidon([
     poseidon([chunked[0][0], chunked[0][1], chunked[0][2]]),
@@ -92,7 +92,7 @@ export const hashEncryptedVote = (encrypted: string): bigint => {
     poseidon([chunked[3][0], chunked[3][1], chunked[3][2]]),
   ])
 
-  console.log('Hash', hash)
+  //   console.log('Hash', hash)
 
   return hash
 }
@@ -150,7 +150,7 @@ export const genMerkleTree = async (endpoint: string): Promise<void> => {
 }
 
 // Example endpoint
-const endpoint = 'https://siv.org/api/election/1752095348369/accepted-votes'
+// const endpoint = 'https://siv.org/api/election/1752095348369/accepted-votes'
 
 // run it
 // genMerkleTree(endpoint).catch(console.error)

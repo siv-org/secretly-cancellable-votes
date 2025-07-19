@@ -15,6 +15,7 @@ import {
   getVectorSignal,
   poseidon,
   hashLeanIMT,
+  chunkedPointSignalToRP,
 } from '../utils.ts'
 import { DebugRistrettoPoint } from '../ristretto/reference.ts'
 import { pointToString, stringToPoint } from '../curve.ts'
@@ -41,7 +42,7 @@ describe('Basic multiplier (example)', () => {
 })
 
 describe('SecretlyCancelVote', () => {
-  it.skip('should cancel a vote', async () => {
+  it('should cancel a vote', async () => {
     const circuit = await circomkit.WitnessTester('SecretlyCancelVote', {
       file: './_SecretlyCancelVote',
       template: 'SecretlyCancelVote',
@@ -98,23 +99,6 @@ describe('SecretlyCancelVote', () => {
       }
     }
 
-    /**
-      // Public inputs
-      signal input root_hash_of_all_encrypted_votes; // poseidon_hash
-      signal input election_public_key[4][3]; // RistrettoPoint.toBytes()
-      signal input actual_tree_depth;
-
-      // Private inputs
-      signal input encoded_vote_to_secretly_cancel[4][3]; // Ristretto Point
-      signal input votes_secret_randomizer[255]; // bitify(bigint)
-
-      signal input merkle_path_of_cancelled_vote[MAX_TREE_DEPTH]; // poseidon_hash[]
-      signal input merkle_path_index; // integer
-      signal input admin_secret_salt; // bigint
-
-      signal input js_encrypted_vote_to_cancel[4][3]; // Ristretto Point calculated in JS 
-     */
-
     const inputs = {
       root_hash_of_all_encrypted_votes: root,
       election_public_key: chunkedElectionPubKey,
@@ -130,23 +114,24 @@ describe('SecretlyCancelVote', () => {
       merkle_path_index: index,
       admin_secret_salt: adminSecretSalt,
       js_encrypted_vote_to_cancel: chunk(
-        // @ts-expect-error Overriding .ep privatization
-        xyztObjToArray(encryptedVoteToCancel.ep)
-      ),
-      // js_encrypted_vote_to_cancel: chunk(xyztObjToArray(ed.RistrettoPoint.fromHex(encryptedVoteToCancel.toHex()).ep)),
-    }
-
-    console.log(
-      'chunk(xyztObjToArray(ed.RistrettoPoint.fromHex(encryptedVoteToCancel.toHex()).ep)',
-      chunk(
         xyztObjToArray(
           // @ts-expect-error Overriding .ep privatization
           ed.RistrettoPoint.fromHex(encryptedVoteToCancel.toHex()).ep
         )
-      )
-    )
+      ),
+    }
 
     const witness = await circuit.calculateWitness(inputs)
+
+    // Extract encryptedVote from circuit.
+    const encryptedVoteSignal = await getChunkedPointSignal(
+      circuit,
+      witness,
+      'encrypted_vote_to_cancel'
+    )
+    // Test the points pass .equals()
+    const encryptedFromCircuit = chunkedPointSignalToRP(encryptedVoteSignal)
+    expect(encryptedFromCircuit.equals(encryptedVoteToCancel)).toBeTrue()
 
     // Confirm saltedHasOfVoteToCancel is calculating correctly
     const saltedHashOfVoteToCancel = await getSignal(

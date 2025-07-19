@@ -2,6 +2,7 @@ import { poseidonPerm } from '@zk-kit/poseidon-cipher'
 import { Circomkit, type WitnessTester, type CircomkitConfig } from 'circomkit'
 import fs from 'fs'
 import path from 'path'
+import * as ed from '@noble/ed25519'
 
 type XYZTPoint = [bigint, bigint, bigint, bigint]
 
@@ -73,6 +74,19 @@ export const getChunkedPointSignal = async (
   }
 
   return result as ChunkedPoint
+}
+
+export const chunkedPointSignalToRP = (
+  chunked: ChunkedPoint
+): ed.RistrettoPoint => {
+  const [x, y, z, t] = dechunk(chunked)
+  const point = new ed.ExtendedPoint(x, y, z, t)
+
+  if (!point.isTorsionFree())
+    console.warn('Warning: Point from XYZT was not torsion free')
+  //   throw new Error('Point from XYZT is not torsion free')
+
+  return new ed.RistrettoPoint(point)
 }
 
 type Vector<N extends number> = bigint[] & { __length: N }
@@ -202,8 +216,7 @@ export function extendedToAffine([X, Y, Z]: XYZTPoint) {
  * @param inputs The inputs to hash
  * @returns the hash of the inputs
  */
-export const poseidon = (inputs: bigint[]): bigint => 
+export const poseidon = (inputs: bigint[]): bigint =>
   poseidonPerm([BigInt(0), ...inputs.map((x) => BigInt(x))])[0]
 
-
-export const hashLeanIMT = (a: bigint, b: bigint): bigint => poseidon([a, b]);
+export const hashLeanIMT = (a: bigint, b: bigint): bigint => poseidon([a, b])
