@@ -101,35 +101,7 @@ circom function generate_proof_of_secret_sum(
 }
 ```
 
-## WIP Development Notes
-
-### Functions we still need in Circom:
-
-(RP = Ristretto Point. Our current js implementation is coming from https://github.com/paulmillr/noble-ed25519 v1)
-
-- [x] decode() bits from Ristretto
-- [x] RP.add()
-- [x] RP.multiply()
-- [x] assert ... in
-  - Use Poseidon hash— ZK Friendly hash.
-  - For inclusion proof.
-  - Build merkle tree outside of circuit.
-  - in circuit:
-    - pass merkle root,
-    - pass message, hash within circuit. that's a leaf.
-    - hash up a level with its neighbors, to get hash one level up.
-      - repeat again until you get to root.
-      - QED the message is present in the root.
-
-### More notes from recent sessions:
-
-#### For Ristretto in Circom, see:
-
-- https://medium.com/electron-labs/zk-ed25519-underlying-mathematics-8d4f64d9431b
-
-#### for loops:
-
-- can't use runtime parameterized lengths. Circuit needs pre-defined lengths, known at compile time.
+### Development notes
 
 #### To test performance at compile time:
 
