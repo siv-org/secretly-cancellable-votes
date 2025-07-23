@@ -62,3 +62,12 @@ template SecretlyCancelVote(MAX_TREE_DEPTH) {
     // 3b) Prove the admin's secret salt is consistent across all cancelled votes
     signal output hash_of_admin_secret_salt <== HashAdminSalt()(admin_secret_salt);
 }
+
+// npx snarkjs r1cs info build/SecretlyCancelVote.r1cs
+// [INFO]  snarkJS: Curve: bn-128
+// [INFO]  snarkJS: # of Wires: 2050548
+// [INFO]  snarkJS: # of Constraints: 2074036
+// [INFO]  snarkJS: # of Private Inputs: 297
+// [INFO]  snarkJS: # of Public Inputs: 14
+// [INFO]  snarkJS: # of Labels: 6203479
+// [INFO]  snarkJS: # of Outputs: 18
