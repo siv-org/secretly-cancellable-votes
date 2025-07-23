@@ -1,8 +1,12 @@
 {
-    "SecretlyCancelVote": {
-        "file": "./_SecretlyCancelVote",
-        "template": "SecretlyCancelVote",
-        "params": [16],
-        "pubs": []
-      }
+  "SecretlyCancelVote": {
+    "file": "./_SecretlyCancelVote",
+    "template": "SecretlyCancelVote",
+    "params": [16],
+    "pubs": [
+      "root_hash_of_all_encrypted_votes",
+      "election_public_key",
+      "actual_tree_depth"
+    ]
+  }
 }
