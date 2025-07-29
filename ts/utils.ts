@@ -4,6 +4,8 @@ import fs from 'fs'
 import path from 'path'
 import * as ed from '@noble/ed25519'
 
+import type { IConfig } from './types'
+
 type XYZTPoint = [bigint, bigint, bigint, bigint]
 
 /** A 255-bit bigint, split into 3 85-bit bigints (85 * 3 = 255) */
@@ -220,3 +222,44 @@ export const poseidon = (inputs: bigint[]): bigint =>
   poseidonPerm([BigInt(0), ...inputs.map((x) => BigInt(x))])[0]
 
 export const hashLeanIMT = (a: bigint, b: bigint): bigint => poseidon([a, b])
+
+/**
+ * Read the config file
+ * @param path - The path to the config file
+ * @returns The config
+ */
+export const readConfig = (path: string): IConfig => {
+  const config = JSON.parse(fs.readFileSync(path, "utf8")) as IConfig
+
+  return config
+}
+
+export const TREE_DEPTH = 16
+
+declare global {
+  interface ITerminatable {
+    terminate: () => Promise<unknown>;
+  }
+
+  // eslint-disable-next-line vars-on-top, no-var, camelcase
+  var curve_bn128: ITerminatable | undefined;
+
+  // eslint-disable-next-line vars-on-top, no-var, camelcase
+  var curve_bls12381: ITerminatable | undefined;
+}
+
+/*
+ * https://github.com/iden3/snarkjs/issues/152
+ * Need to cleanup the threads to avoid stalling
+ */
+export const cleanThreads = async (): Promise<void> => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!globalThis) {
+    return;
+  }
+
+  const curves = ["curve_bn128", "curve_bls12381"];
+  await Promise.all(
+    curves.map((curve) => globalThis[curve as "curve_bn128" | "curve_bls12381"]?.terminate()).filter(Boolean),
+  );
+};

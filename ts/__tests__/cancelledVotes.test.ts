@@ -16,11 +16,11 @@ import {
   poseidon,
   hashLeanIMT,
   chunkedPointSignalToRP,
-} from '../utils.ts'
-import { DebugRistrettoPoint } from '../ristretto/reference.ts'
-import { pointToString, stringToPoint } from '../curve.ts'
-import { shouldRecompile } from '../watch-circuits.ts'
-import { hashEncryptedVote } from '../merkleTree.ts'
+} from '../utils'
+import { DebugRistrettoPoint } from '../ristretto/reference'
+import { pointToString, stringToPoint } from '../curve'
+import { shouldRecompile } from '../watch-circuits'
+import { hashEncryptedVote } from '../merkleTree'
 
 const TREE_DEPTH = 16
 
@@ -44,14 +44,14 @@ describe('Basic multiplier (example)', () => {
 describe('SecretlyCancelVote', () => {
   it('should cancel a vote', async () => {
     const circuit = await circomkit.WitnessTester('SecretlyCancelVote', {
-      file: './_SecretlyCancelVote',
+      file: './SecretlyCancelVote',
       template: 'SecretlyCancelVote',
-      recompile: shouldRecompile('_SecretlyCancelVote.circom'),
+      recompile: shouldRecompile('SecretlyCancelVote.circom'),
       params: [TREE_DEPTH],
       pubs: [
-        'root_hash_of_all_encrypted_votes',
-        'election_public_key',
-        'actual_tree_depth',
+        'rootHashOfAllEncryptedVotes',
+        'electionPublicKey',
+        'actualTreeDepth',
       ],
     })
 
@@ -100,20 +100,20 @@ describe('SecretlyCancelVote', () => {
     }
 
     const inputs = {
-      root_hash_of_all_encrypted_votes: root,
-      election_public_key: chunkedElectionPubKey,
-      actual_tree_depth: merkleTree.depth,
-      encoded_vote_to_secretly_cancel: chunk(
+      rootHashOfAllEncryptedVotes: root,
+      electionPublicKey: chunkedElectionPubKey,
+      actualTreeDepth: merkleTree.depth,
+      encodedVoteToSecretlyCancel: chunk(
         // @ts-expect-error Overriding .ep privatization
         xyztObjToArray(encodedVotes[indexOfLeafToCancel].ep)
       ),
-      votes_secret_randomizer: bigintTo255Bits(
+      voteSecretRandomizer: bigintTo255Bits(
         sampleRandomizers[indexOfLeafToCancel]
       ),
-      merkle_path_of_cancelled_vote: proof.siblings,
-      merkle_path_index: index,
-      admin_secret_salt: adminSecretSalt,
-      js_encrypted_vote_to_cancel: chunk(
+      merklePathOfCancelledVote: proof.siblings,
+      merklePathIndex: index,
+      adminSecretSalt: adminSecretSalt,
+      jsEncryptedVoteToCancel: chunk(
         xyztObjToArray(
           // @ts-expect-error Overriding .ep privatization
           ed.RistrettoPoint.fromHex(encryptedVoteToCancel.toHex()).ep
@@ -127,7 +127,7 @@ describe('SecretlyCancelVote', () => {
     const encryptedVoteSignal = await getChunkedPointSignal(
       circuit,
       witness,
-      'encrypted_vote_to_cancel'
+      'encryptedVoteToCancel'
     )
     // Test the points pass .equals()
     const encryptedFromCircuit = chunkedPointSignalToRP(encryptedVoteSignal)
@@ -137,7 +137,7 @@ describe('SecretlyCancelVote', () => {
     const saltedHashOfVoteToCancel = await getSignal(
       circuit,
       witness,
-      'salted_hash_of_vote_to_cancel'
+      'saltedHashOfVoteToCancel'
     )
     const saltedHashOfVoteToCancelInJs = poseidon([
       adminSecretSalt,
@@ -149,7 +149,7 @@ describe('SecretlyCancelVote', () => {
     const hashOfAdminSecretSaltCircuit = await getSignal(
       circuit,
       witness,
-      'hash_of_admin_secret_salt'
+      'hashOfAdminSecretSalt'
     )
     expect(hashOfAdminSecretSaltCircuit).toBe(hashOfAdminSecretSalt)
 
@@ -158,7 +158,7 @@ describe('SecretlyCancelVote', () => {
       await getVectorSignal(
         circuit,
         witness,
-        'vote_selection_to_cancel',
+        'voteSelectionToCancel',
         16 // MAX_VOTE_CONTENT_LENGTH
       )
     )

@@ -1,45 +1,16 @@
 import { LeanIMT, LeanIMTHashFunction } from '@zk-kit/lean-imt'
-
-import { chunk, hashLeanIMT, poseidon, xyztObjToArray } from './utils'
 import * as ed from '@noble/ed25519'
 
-/**
- * The data stored by the SIV sever for each vote
- */
-interface IEncryptedAndLock {
-  encrypted: string
-  lock: boolean
-}
+import { chunk, hashLeanIMT, poseidon, xyztObjToArray } from './utils'
 
-/**
- * The SIV API returns a JSON object with the following structure:
- */
-interface ISIVVote {
-  auth: string
-  [key: string]: IEncryptedAndLock | string
-}
-
-/**
- * An interface to represent the data we need from the vote
- */
-interface IVoteResult {
-  option: string
-  encrypted: string
-}
-
-/**
- * A group of votes by option
- */
-interface IGroupedVotes {
-  [option: string]: string[]
-}
+import type { ISIVVote, IVoteResult, IGroupedVotes } from './types'
 
 /**
  * Fetch votes from the SIV API
  * @param endpoint - The endpoint to fetch votes from
  * @returns An array of IVoteResult objects
  */
-const fetchVotes = async (endpoint: string): Promise<IVoteResult[]> => {
+export const fetchVotes = async (endpoint: string): Promise<IVoteResult[]> => {
   const res = await fetch(endpoint)
 
   if (!res.ok) {
@@ -83,16 +54,12 @@ export const hashEncryptedVote = (encrypted: string): bigint => {
 
   const chunked = chunk(xyztObjToArray(RP))
 
-  //   console.log('Chunked before hashing', chunked)
-
   const hash = poseidon([
     poseidon([chunked[0][0], chunked[0][1], chunked[0][2]]),
     poseidon([chunked[1][0], chunked[1][1], chunked[1][2]]),
     poseidon([chunked[2][0], chunked[2][1], chunked[2][2]]),
     poseidon([chunked[3][0], chunked[3][1], chunked[3][2]]),
   ])
-
-  //   console.log('Hash', hash)
 
   return hash
 }
@@ -102,7 +69,7 @@ export const hashEncryptedVote = (encrypted: string): bigint => {
  * @param groupedVotes - A group of votes by option
  * @returns A map of options to Merkle trees
  */
-const createMerkleTreesForOptions = (
+export const createMerkleTreesForOptions = (
   groupedVotes: IGroupedVotes
 ): { [option: string]: LeanIMT } => {
   const merkleTrees: { [option: string]: LeanIMT } = {}
@@ -115,11 +82,21 @@ const createMerkleTreesForOptions = (
     )
 
     merkleTrees[option] = merkleTree
-
-    console.log(`Created Merkle tree for ${option} with ${votes.length} votes`)
   })
 
   return merkleTrees
+}
+
+export const groupVotesByOption = (votes: IVoteResult[]): IGroupedVotes => {
+  // Group votes by option
+  return votes.reduce((acc, vote) => {
+    if (!acc[vote.option]) {
+      acc[vote.option] = []
+    }
+    acc[vote.option].push(vote.encrypted)
+
+    return acc
+  }, {} as IGroupedVotes)
 }
 
 /**
@@ -129,24 +106,14 @@ const createMerkleTreesForOptions = (
  *  3. Chunk the encrypted field
  * @param endpoint - The endpoint to fetch votes from
  */
-export const genMerkleTree = async (endpoint: string): Promise<void> => {
+export const genMerkleTree = async (
+  endpoint: string
+): Promise<{ [option: string]: LeanIMT }> => {
   const votes = await fetchVotes(endpoint)
 
-  // Group votes by option
-  const groupedVotes: IGroupedVotes = votes.reduce((acc, vote) => {
-    if (!acc[vote.option]) {
-      acc[vote.option] = []
-    }
-    acc[vote.option].push(vote.encrypted)
+  const groupedVotes = groupVotesByOption(votes)
 
-    return acc
-  }, {} as IGroupedVotes)
-
-  const merkleTrees = createMerkleTreesForOptions(groupedVotes)
-
-  Object.entries(merkleTrees).forEach(([option, tree]) => {
-    console.log(`Merkle tree for ${option}:`, tree.root)
-  })
+  return createMerkleTreesForOptions(groupedVotes)
 }
 
 // Example endpoint

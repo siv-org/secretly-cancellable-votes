@@ -1,0 +1,11 @@
+{
+    "electionPublicKey": "e4742ff6ae59f741b757d1b1df0d0b0eeb3dd6618f42aed0f97cddcd480f186e",
+    "voteSecretRandomizer": "1234567890",
+    "adminSecretSalt": "1234567890",
+    "encodedVoteToCancel": "1234567890",
+    "questionId": "icecream",
+    "endpoint": "https://siv.org/api/election/1752095348369/accepted-votes",
+    "zKeyPath": "./build/SecretlyCancelVote/groth16_pkey.zkey",
+    "wasmPath": "./build/SecretlyCancelVote/SecretlyCancelVote_js/SecretlyCancelVote.wasm",
+    "electionType": "choose-only-one"
+}

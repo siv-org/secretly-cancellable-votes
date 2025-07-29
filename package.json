@@ -7,9 +7,11 @@
     "node": ">=22.6.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc",
     "circom:build": "NODE_OPTIONS=--max-old-space-size=4096 circomkit compile",
     "circom:setup": "NODE_OPTIONS=--max-old-space-size=4096 circomkit setup",
+    "start": "bun ts/main.ts",
+    "start:pnpm": "tsx ts/main.ts",
     "test": "bun test --timeout=60_000",
     "test:watch": "npm test -- --watch",
     "watch-circuits": "nodemon --quiet --ext circom --delay 0.5 --exec 'bun ts/watch-circuits.ts'",
@@ -21,6 +23,7 @@
   "license": "ISC",
   "dependencies": {
     "@noble/ed25519": "^1.7.5",
+    "@types/snarkjs": "^0.7.9",
     "@zk-kit/circuits": "1.0.0-beta",
     "@zk-kit/lean-imt": "^2.2.3",
     "@zk-kit/poseidon-cipher": "^0.3.2",
@@ -33,6 +36,7 @@
     "@types/node": "^22.14.1",
     "@types/typescript": "^2.0.0",
     "nodemon": "3",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
 }

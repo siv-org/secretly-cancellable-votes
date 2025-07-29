@@ -1,0 +1,11 @@
+{
+    "electionPublicKey": "d0ef9ed925b4b02185d8dfc59377803f8b64f59a65e102ba1062f92316b9e157",
+    "voteSecretRandomizer": "309362126961137817231440419333321118346756592899931341896139775548828235569",
+    "adminSecretSalt": "1234567890",
+    "encodedVoteToCancel": "30313532342d353233302d393638333a43686f636f6c617465b768c864460973",
+    "endpoint": "https://siv.org/api/election/1753734274771/accepted-votes",
+    "zKeyPath": "./build/SecretlyCancelVote/groth16_pkey.zkey",
+    "wasmPath": "./build/SecretlyCancelVote/SecretlyCancelVote_js/SecretlyCancelVote.wasm",
+    "electionType": "choose-only-one",
+    "questionId": "icecream"
+}
