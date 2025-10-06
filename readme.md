@@ -43,65 +43,67 @@ The goal of this framework is to give SIV votes a similar level of defense again
 
 The original published SIV vote totals remain unchanged. This new sum of secretly-cancelled votes is also published, and its numbers can be subtracted from the SIV total, for the "uncorrupted" total.
 
-**Admin** can then create a zero-knowledge proof of the sum of all cancelled votes, to prove each cancellation was authorized by the individual voters' themselves, but without revealing to 3rd-party coercers or bribers which votes were cancelled.
+**Admin** can then create zero-knowledge proofs for each of the cancelled votes, to prove each cancellation was authorized by the individual voters' themselves, but without revealing to 3rd-party coercers or bribers which votes were cancelled.
 
 Fundamentally, the admin is proving in zero-knowledge that:
 
-1. the private vote data they were given correspond to unique public encrypted votes
-2. and that they add up to the claimed sum
+They were provided:
+
+- the private encryption data for a normally accepted vote submissions — this serves as authorization from voter
+- the anonymized content of the cancelled vote— unique verification number removed
+
+Each cancellation serves as a "-1" for the originally cast vote, cancelling each other out.
+
+### Simplified pseudocode for readability:
+
+For the full working circuit, see [circuits/\_SecretlyCancelVote.circom](circuits/_SecretlyCancelVote.circom).
 
 ```ts
-circom function generate_proof_of_secret_sum(
-    public all_encrypted_votes, // { encrypted: hex_string, lock: hex_string }[]
-    public claimed_sum_of_cancelled_votes_subset, // grouped sum, like [['washington', integer], ['arnold', integer]]
-    public election_public_key, // { recipient: hex_string }
-    private votes_to_secretly_cancel, // { plaintext: string like '4444-4444-4444:washington', encoded: hex_string, randomizer: bigint_string }[]
-    public hashes_of_votes_to_cancel, // hash_string[]
-    private admin_secret_salt, // bigint
-    public hash_of_admin_secret_salt // string
+circom function Secretly_Cancel_Vote(
+    // Public Inputs
+    public root_hash_of_all_encrypted_votes, // Root hash of merkle tree with all submitted votes
+    public election_public_key, // RistrettoPoint
+
+    // Private Inputs
+    private admin_secret_salt, // bigint. Admin re-uses for all cancellations to prove anonymized votes' uniqueness
+    private encoded_vote_to_secretly_cancel, // RistrettoPoint of embedded string, eg: '4444-4444-4444:washington'
+    private votes_secret_randomizer, // bigint
+    private merkle_path_of_cancelled_vote, // integer[]
+
+    // Public Outputs
+    public output vote_selection_to_cancel, // string like 'washington' (charCode[])
+    public output uniqueness_proof, // hash(vote || admin_secret_salt)
+    public output admin_key_consistency_hash, // hash(admin_secret_salt)
 ) {
-    let recalculated_sum = {}
 
-    // Prove admin_secret_salt still hashes to a consistent value across batches
-    // To prevent re-using votes multiple times
-    assert hash(admin_secret_salt) === hash_of_admin_secret_salt
+    // 1. First, prove the encrypted vote was
+    //    in the known set of public submitted votes
 
-    // For each item in votes_to_secretly_cancel:
-    for (vote in votes_to_secretly_cancel) {
+    // 1a) Recalculate the encrypted vote within circuit, using secret randomizer
+    encrypted_vote_to_cancel <== EncryptVote(election_public_key, encoded_vote_to_secretly_cancel, votes_secret_randomizer)
 
-        // First, the admin proves each private vote
-        // corresponds to one of the public encrypted votes
+    // 1b) Then use the merkle path to prove it's in the set of all encrypted votes
+    assert true === MembershipProof(encrypted_vote_to_cancel, merkle_path_of_cancelled_vote, root_hash_of_all_encrypted_votes)
 
-        // Confirm the provided encoded point
-        // does in fact map to the plaintext
-        let encoded = RP.fromHex(vote.encoded)
-        assert extract(encoded) === vote.plaintext
+    //
+    // --- Public outputs ---
+    //
 
-        // Confirm it does in fact hash into the input_hash
-        // These hashes can be confirmed unique outside the circuit
-        assert hashes_of_votes_to_cancel[i] === hash(vote.randomizer, vote.encoded, admin_secret_salt)
+    // 2) Prove the cancelled vote content
+    // - The vote that should get a -1.
+    output `vote_selection_to_cancel` <== ExtractSelectionFromVote(encoded_vote_to_secretly_cancel) // Like .slice()
 
-        // Then we recalculate the encrypted ciphertext using the Elliptic Curve ElGamal algorithm:
-        // Encrypted = Encoded + (Recipient * randomizer)
+    // 3) Prove the cancelled vote is unique
+    // - This hash can be confirmed unique outside the circuit
+    output `uniqueness_proof` <== PoseidonHash(encoded_vote_to_secretly_cancel, admin_secret_salt)
 
-        let encrypted = encoded.add(recipient.multiply(vote.randomizer))
-        // We can skip "lock", because we're not decrypting,
-        // just confirming the encoded value is present in the full set.
-
-        assert encrypted in all_encrypted_votes
-        // If we've made it this far, we've successfully proved
-        // this private vote was in the set of public all_encrypted_votes
-
-        // Now, we check if the vote adds up to the claimed sum
-        let vote_content = vote.plaintext.slice(15) // First 15 chars are verification number
-        recalculated_sum[vote_content] += 1
-    }
-
-    assert recalculated_sum === claimed_sum_of_cancelled_votes_subset
+    // 3b) Prove the admin's secret salt stays consistent across all cancelled votes
+    // - This hash can be confirmed consistent outside the circuit
+    output `admin_key_consistency_hash` <== PoseidonHash(admin_secret_salt)
 }
 ```
 
-### Development notes
+### Development Tips
 
 #### To test performance at compile time:
 

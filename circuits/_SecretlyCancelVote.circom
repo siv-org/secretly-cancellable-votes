@@ -24,7 +24,7 @@ template SecretlyCancelVote(MAX_TREE_DEPTH) {
     // Public inputs
     signal input root_hash_of_all_encrypted_votes; // poseidon_hash
     signal input election_public_key[4][3]; // RistrettoPoint.toBytes()
-    signal input actual_tree_depth;
+    signal input actual_tree_depth; // optimization to re-use one circuit for different tree depths
 
     // Private inputs
     signal input encoded_vote_to_secretly_cancel[4][3]; // Ristretto Point
@@ -57,7 +57,7 @@ template SecretlyCancelVote(MAX_TREE_DEPTH) {
 
     // 3) Prove the cancelled vote is unique
     var hashed_encoded_vote_to_secretly_cancel = HashPoint()(encoded_vote_to_secretly_cancel);
-    signal output salted_hash_of_vote_to_cancel <== Poseidon(2)([admin_secret_salt, hashed_encoded_vote_to_secretly_cancel]);
+    signal output salted_hash_of_vote_to_cancel <== Poseidon(2)([hashed_encoded_vote_to_secretly_cancel, admin_secret_salt]);
 
     // 3b) Prove the admin's secret salt is consistent across all cancelled votes
     signal output hash_of_admin_secret_salt <== HashAdminSalt()(admin_secret_salt);
