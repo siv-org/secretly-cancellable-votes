@@ -91,15 +91,15 @@ circom function Secretly_Cancel_Vote(
 
     // 2) Prove the cancelled vote content
     // - The vote that should get a -1.
-    output `vote_selection_to_cancel` <== ExtractSelectionFromVote(encoded_vote_to_secretly_cancel) // Like .slice()
+    output vote_selection_to_cancel <== ExtractSelectionFromVote(encoded_vote_to_secretly_cancel) // Like .slice()
 
     // 3) Prove the cancelled vote is unique
     // - This hash can be confirmed unique outside the circuit
-    output `uniqueness_proof` <== PoseidonHash(encoded_vote_to_secretly_cancel, admin_secret_salt)
+    output uniqueness_proof <== PoseidonHash(encoded_vote_to_secretly_cancel, admin_secret_salt)
 
     // 3b) Prove the admin's secret salt stays consistent across all cancelled votes
     // - This hash can be confirmed consistent outside the circuit
-    output `admin_key_consistency_hash` <== PoseidonHash(admin_secret_salt)
+    output admin_key_consistency_hash <== PoseidonHash(admin_secret_salt)
 }
 ```
 
